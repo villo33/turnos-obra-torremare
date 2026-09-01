@@ -15,6 +15,7 @@ function CalendarioPage({
   trabajadores = [],
   turnos = {},
   setTurnos,
+  esAdministrador = false,
 }) {
 
   const [fechaSeleccionada, setFechaSeleccionada] =
@@ -29,10 +30,6 @@ function CalendarioPage({
   const [guardando, setGuardando] =
     useState(false);
 
-
-  /* =====================================================
-     CONVERTIR FECHA
-  ===================================================== */
 
   const convertirFecha = (fecha) => {
 
@@ -51,10 +48,6 @@ function CalendarioPage({
     ).padStart(2, "0")}`;
   };
 
-
-  /* =====================================================
-     CARGAR TURNOS DESDE SUPABASE
-  ===================================================== */
 
   useEffect(() => {
 
@@ -110,14 +103,14 @@ function CalendarioPage({
   }, [setTurnos]);
 
 
-  /* =====================================================
-     SELECCIONAR TURNO
-  ===================================================== */
-
   const seleccionarTurno = (
     fecha,
     trabajador
   ) => {
+
+    if (!esAdministrador) {
+      return;
+    }
 
     setFechaSeleccionada(fecha);
 
@@ -126,15 +119,15 @@ function CalendarioPage({
   };
 
 
-  /* =====================================================
-     GUARDAR TURNO
-  ===================================================== */
-
   const guardarTurno = async (
     fecha,
     trabajadorId,
     tipo
   ) => {
+
+    if (!esAdministrador) {
+      return;
+    }
 
     const fechaKey =
       convertirFecha(fecha);
@@ -152,27 +145,17 @@ function CalendarioPage({
         }
       );
 
-
-      /*
-       * Primero buscamos si ya existe
-       * un turno para ese trabajador y fecha.
-       */
-
       const turnosExistentes =
         await obtenerTurnos();
 
       const turnoExistente =
         turnosExistentes.find(
           (turno) =>
-            Number(turno.trabajador_id) ===
-              Number(trabajadorId) &&
+            String(turno.trabajador_id) ===
+              String(trabajadorId) &&
             turno.fecha === fechaKey
         );
 
-
-      /* =================================================
-         SI YA EXISTE → ACTUALIZAR
-      ================================================= */
 
       if (turnoExistente) {
 
@@ -183,31 +166,16 @@ function CalendarioPage({
           }
         );
 
-      }
-
-
-      /* =================================================
-         SI NO EXISTE → CREAR
-      ================================================= */
-
-      else {
+      } else {
 
         await crearTurno({
-          trabajador_id:
-            trabajadorId,
-
-          fecha:
-            fechaKey,
-
+          trabajador_id: trabajadorId,
+          fecha: fechaKey,
           tipo,
         });
 
       }
 
-
-      /* =================================================
-         ACTUALIZAR CALENDARIO
-      ================================================= */
 
       setTurnos((actuales) => ({
 
@@ -217,8 +185,7 @@ function CalendarioPage({
 
           ...(actuales[fechaKey] || {}),
 
-          [trabajadorId]:
-            tipo,
+          [trabajadorId]: tipo,
 
         },
 
@@ -252,14 +219,14 @@ function CalendarioPage({
   };
 
 
-  /* =====================================================
-     ELIMINAR TURNO
-  ===================================================== */
-
   const eliminarTurno = async (
     fecha,
     trabajadorId
   ) => {
+
+    if (!esAdministrador) {
+      return;
+    }
 
     const fechaKey =
       convertirFecha(fecha);
@@ -272,10 +239,9 @@ function CalendarioPage({
       const turno =
         datos.find(
           (item) =>
-            Number(item.trabajador_id) ===
-              Number(trabajadorId) &&
-            item.fecha ===
-              fechaKey
+            String(item.trabajador_id) ===
+              String(trabajadorId) &&
+            item.fecha === fechaKey
         );
 
 
@@ -294,10 +260,6 @@ function CalendarioPage({
         turno.id
       );
 
-
-      /* =================================================
-         ACTUALIZAR PANTALLA
-      ================================================= */
 
       setTurnos((actuales) => {
 
@@ -331,6 +293,11 @@ function CalendarioPage({
 
       });
 
+
+      console.log(
+        "Turno eliminado correctamente."
+      );
+
     } catch (error) {
 
       console.error(
@@ -348,10 +315,6 @@ function CalendarioPage({
   };
 
 
-  /* =====================================================
-     CERRAR MODAL
-  ===================================================== */
-
   const cerrarModal = () => {
 
     setFechaSeleccionada(null);
@@ -360,10 +323,6 @@ function CalendarioPage({
 
   };
 
-
-  /* =====================================================
-     CARGANDO
-  ===================================================== */
 
   if (cargandoTurnos) {
 
@@ -405,10 +364,6 @@ function CalendarioPage({
   }
 
 
-  /* =====================================================
-     INTERFAZ
-  ===================================================== */
-
   return (
 
     <main className="dashboard">
@@ -426,8 +381,10 @@ function CalendarioPage({
           </h3>
 
           <p>
-            Organiza las jornadas de día y
-            noche de todo el equipo.
+            {esAdministrador
+              ? "Organiza y asigna las jornadas de día y noche de todo el equipo."
+              : "Consulta las jornadas de día y noche de todo el equipo."
+            }
           </p>
 
         </div>
@@ -455,14 +412,9 @@ function CalendarioPage({
       <Calendario
         trabajadores={trabajadores}
         turnos={turnos}
-
-        onSeleccionarTurno={
-          seleccionarTurno
-        }
-
-        onEliminarTurno={
-          eliminarTurno
-        }
+        onSeleccionarTurno={seleccionarTurno}
+        onEliminarTurno={eliminarTurno}
+        puedeEditar={esAdministrador}
       />
 
 
@@ -472,11 +424,8 @@ function CalendarioPage({
       />
 
 
-      {/* =================================================
-          MODAL
-      ================================================= */}
-
-      {fechaSeleccionada &&
+      {esAdministrador &&
+        fechaSeleccionada &&
         trabajadorSeleccionado && (
 
           <div
@@ -569,16 +518,10 @@ function CalendarioPage({
 
               <div className="turno-options">
 
-                {/* ================================
-                    DÍA
-                ================================= */}
-
                 <button
                   type="button"
                   className="turno-option turno-dia"
-
                   disabled={guardando}
-
                   onClick={() =>
                     guardarTurno(
                       fechaSeleccionada,
@@ -611,16 +554,10 @@ function CalendarioPage({
                 </button>
 
 
-                {/* ================================
-                    NOCHE
-                ================================= */}
-
                 <button
                   type="button"
                   className="turno-option turno-noche"
-
                   disabled={guardando}
-
                   onClick={() =>
                     guardarTurno(
                       fechaSeleccionada,

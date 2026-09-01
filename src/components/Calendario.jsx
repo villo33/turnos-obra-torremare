@@ -10,26 +10,34 @@ function Calendario({
 }) {
   const [fechaInicio, setFechaInicio] = useState(() => {
     const fecha = new Date();
+
     fecha.setHours(0, 0, 0, 0);
 
     const dia = fecha.getDay();
-    const diferencia = dia === 0 ? -6 : 1 - dia;
 
-    fecha.setDate(fecha.getDate() + diferencia);
+    const diferencia =
+      dia === 0 ? -6 : 1 - dia;
+
+    fecha.setDate(
+      fecha.getDate() + diferencia
+    );
 
     return fecha;
   });
 
   const dias = useMemo(() => {
-    return Array.from({ length: 7 }, (_, indice) => {
-      const fecha = new Date(fechaInicio);
+    return Array.from(
+      { length: 7 },
+      (_, indice) => {
+        const fecha = new Date(fechaInicio);
 
-      fecha.setDate(
-        fechaInicio.getDate() + indice
-      );
+        fecha.setDate(
+          fechaInicio.getDate() + indice
+        );
 
-      return fecha;
-    });
+        return fecha;
+      }
+    );
   }, [fechaInicio]);
 
   const obtenerClaveFecha = (fecha) => {
@@ -50,9 +58,12 @@ function Calendario({
     const hoy = new Date();
 
     return (
-      hoy.getFullYear() === fecha.getFullYear() &&
-      hoy.getMonth() === fecha.getMonth() &&
-      hoy.getDate() === fecha.getDate()
+      hoy.getFullYear() ===
+        fecha.getFullYear() &&
+      hoy.getMonth() ===
+        fecha.getMonth() &&
+      hoy.getDate() ===
+        fecha.getDate()
     );
   };
 
@@ -66,9 +77,12 @@ function Calendario({
   };
 
   const nombreMes = (fecha) => {
-    return fecha.toLocaleDateString("es-CO", {
-      month: "long",
-    });
+    return fecha.toLocaleDateString(
+      "es-CO",
+      {
+        month: "long",
+      }
+    );
   };
 
   const cambiarSemana = (cantidad) => {
@@ -76,7 +90,8 @@ function Calendario({
       const nueva = new Date(actual);
 
       nueva.setDate(
-        actual.getDate() + cantidad * 7
+        actual.getDate() +
+          cantidad * 7
       );
 
       return nueva;
@@ -89,7 +104,9 @@ function Calendario({
     fecha.setHours(0, 0, 0, 0);
 
     const dia = fecha.getDay();
-    const diferencia = dia === 0 ? -6 : 1 - dia;
+
+    const diferencia =
+      dia === 0 ? -6 : 1 - dia;
 
     fecha.setDate(
       fecha.getDate() + diferencia
@@ -98,7 +115,10 @@ function Calendario({
     setFechaInicio(fecha);
   };
 
-  const obtenerTurno = (fecha, trabajador) => {
+  const obtenerTurno = (
+    fecha,
+    trabajador
+  ) => {
     const claveFecha =
       obtenerClaveFecha(fecha);
 
@@ -110,33 +130,51 @@ function Calendario({
   };
 
   const cantidadTurnos =
-    Object.values(turnos || {}).reduce(
+    Object.values(
+      turnos || {}
+    ).reduce(
       (total, dia) =>
-        total + Object.keys(dia || {}).length,
+        total +
+        Object.keys(
+          dia || {}
+        ).length,
       0
     );
 
   const cantidadDias =
-    Object.values(turnos || {}).reduce(
+    Object.values(
+      turnos || {}
+    ).reduce(
       (total, dia) =>
         total +
-        Object.values(dia || {}).filter(
-          (turno) => turno === "dia"
+        Object.values(
+          dia || {}
+        ).filter(
+          (turno) =>
+            turno === "dia"
         ).length,
       0
     );
 
   const cantidadNoches =
-    Object.values(turnos || {}).reduce(
+    Object.values(
+      turnos || {}
+    ).reduce(
       (total, dia) =>
         total +
-        Object.values(dia || {}).filter(
-          (turno) => turno === "noche"
+        Object.values(
+          dia || {}
+        ).filter(
+          (turno) =>
+            turno === "noche"
         ).length,
       0
     );
 
-  const seleccionarCelda = (fecha, trabajador) => {
+  const seleccionarCelda = (
+    fecha,
+    trabajador
+  ) => {
     if (!puedeEditar) {
       return;
     }
@@ -149,7 +187,10 @@ function Calendario({
     }
   };
 
-  const eliminarCelda = (fecha, trabajador) => {
+  const eliminarCelda = (
+    fecha,
+    trabajador
+  ) => {
     if (!puedeEditar) {
       return;
     }
@@ -167,6 +208,7 @@ function Calendario({
       <div className="calendario-header">
 
         <div>
+
           <span className="calendario-label">
             PROGRAMACIÓN SEMANAL
           </span>
@@ -176,9 +218,12 @@ function Calendario({
           </h3>
 
           <p>
-            Organiza y consulta los turnos
-            del personal de la obra.
+            {puedeEditar
+              ? "Organiza y asigna los turnos del personal de la obra."
+              : "Consulta los turnos programados del personal de la obra."
+            }
           </p>
+
         </div>
 
         <div className="calendario-actions">
@@ -214,11 +259,13 @@ function Calendario({
           </button>
 
         </div>
+
       </div>
 
       <div className="week-info">
 
         <div>
+
           <strong>
             {nombreMes(dias[0])}
           </strong>
@@ -228,6 +275,7 @@ function Calendario({
             {dias[0].getDate()} —{" "}
             {dias[6].getDate()}
           </span>
+
         </div>
 
         <div className="legend">
@@ -260,6 +308,7 @@ function Calendario({
           </div>
 
           {dias.map((fecha) => (
+
             <div
               className={`day-header ${
                 esHoy(fecha)
@@ -284,104 +333,120 @@ function Calendario({
               )}
 
             </div>
+
           ))}
 
-          {trabajadores.map((trabajador) => (
+          {trabajadores.map(
+            (trabajador) => (
 
-            <div
-              className="worker-row"
-              key={trabajador.id}
-            >
+              <div
+                className="worker-row"
+                key={trabajador.id}
+              >
 
-              <div className="worker-name">
+                <div className="worker-name">
 
-                <div className="worker-avatar">
-                  {trabajador.nombre
-                    ?.trim()
-                    ?.charAt(0)
-                    ?.toUpperCase() || "?"}
+                  <div className="worker-avatar">
+
+                    {trabajador.nombre
+                      ?.trim()
+                      ?.charAt(0)
+                      ?.toUpperCase() ||
+                      "?"}
+
+                  </div>
+
+                  <div>
+
+                    <strong>
+                      {trabajador.nombre}
+                    </strong>
+
+                    <span>
+                      {trabajador.cargo ||
+                        "Vigilante"}
+                    </span>
+
+                  </div>
+
                 </div>
 
-                <div>
-                  <strong>
-                    {trabajador.nombre}
-                  </strong>
+                {dias.map((fecha) => {
 
-                  <span>
-                    {trabajador.cargo ||
-                      "Vigilante"}
-                  </span>
-                </div>
+                  const turno =
+                    obtenerTurno(
+                      fecha,
+                      trabajador
+                    );
+
+                  const clave =
+                    `${trabajador.id}-${obtenerClaveFecha(
+                      fecha
+                    )}`;
+
+                  return (
+
+                    <div
+                      className={`shift-cell ${
+                        esHoy(fecha)
+                          ? "today-cell"
+                          : ""
+                      }`}
+                      key={clave}
+                    >
+
+                      {turno ? (
+
+                        <TurnoCard
+                          tipo={turno}
+                          onClick={
+                            puedeEditar
+                              ? () =>
+                                  eliminarCelda(
+                                    fecha,
+                                    trabajador
+                                  )
+                              : undefined
+                          }
+                        />
+
+                      ) : (
+
+                        <button
+                          type="button"
+                          className={`free-cell ${
+                            !puedeEditar
+                              ? "view-only"
+                              : ""
+                          }`}
+                          onClick={() =>
+                            seleccionarCelda(
+                              fecha,
+                              trabajador
+                            )
+                          }
+                          title={
+                            puedeEditar
+                              ? "Asignar turno"
+                              : "Día libre"
+                          }
+                        >
+                          {puedeEditar
+                            ? "+"
+                            : "—"}
+                        </button>
+
+                      )}
+
+                    </div>
+
+                  );
+                })}
 
               </div>
 
-              {dias.map((fecha) => {
-
-                const turno =
-                  obtenerTurno(
-                    fecha,
-                    trabajador
-                  );
-
-                const clave =
-                  `${trabajador.id}-${obtenerClaveFecha(
-                    fecha
-                  )}`;
-
-                return (
-                  <div
-                    className={`shift-cell ${
-                      esHoy(fecha)
-                        ? "today-cell"
-                        : ""
-                    }`}
-                    key={clave}
-                  >
-
-                    {turno ? (
-
-                      <TurnoCard
-                        tipo={turno}
-                        onClick={() =>
-                          eliminarCelda(
-                            fecha,
-                            trabajador
-                          )
-                        }
-                      />
-
-                    ) : (
-
-                      <button
-                        type="button"
-                        className={`free-cell ${
-                          !puedeEditar
-                            ? "view-only"
-                            : ""
-                        }`}
-                        onClick={() =>
-                          seleccionarCelda(
-                            fecha,
-                            trabajador
-                          )
-                        }
-                        title={
-                          puedeEditar
-                            ? "Asignar turno"
-                            : "Día libre"
-                        }
-                      >
-                        {puedeEditar ? "+" : "—"}
-                      </button>
-
-                    )}
-
-                  </div>
-                );
-              })}
-
-            </div>
-          ))}
+            )
+          )}
 
         </div>
 
@@ -390,6 +455,7 @@ function Calendario({
       <div className="calendar-footer">
 
         <div>
+
           <strong>
             {cantidadTurnos}
           </strong>
@@ -397,9 +463,11 @@ function Calendario({
           <span>
             turnos asignados
           </span>
+
         </div>
 
         <div>
+
           <strong>
             {cantidadDias}
           </strong>
@@ -407,9 +475,11 @@ function Calendario({
           <span>
             turnos de día
           </span>
+
         </div>
 
         <div>
+
           <strong>
             {cantidadNoches}
           </strong>
@@ -417,6 +487,7 @@ function Calendario({
           <span>
             turnos de noche
           </span>
+
         </div>
 
       </div>
