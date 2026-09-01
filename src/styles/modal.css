@@ -1,0 +1,422 @@
+/* =====================================================
+   MODAL DE TURNOS
+===================================================== */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background: rgba(16, 24, 40, 0.55);
+
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.modal-turno {
+  width: 100%;
+  max-width: 430px;
+
+  background: #ffffff;
+
+  border: 1px solid #eaecf0;
+  border-radius: 16px;
+
+  box-shadow:
+    0 20px 40px rgba(16, 24, 40, 0.16),
+    0 5px 12px rgba(16, 24, 40, 0.08);
+
+  overflow: hidden;
+
+  animation: modalEntrada 0.18s ease-out;
+}
+
+@keyframes modalEntrada {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+
+/* =====================================================
+   HEADER
+===================================================== */
+
+.modal-header {
+  min-height: 78px;
+
+  padding: 20px 22px;
+
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  border-bottom: 1px solid #f2f4f7;
+}
+
+.modal-label {
+  display: block;
+
+  color: #98a2b3;
+
+  font-size: 8px;
+  font-weight: 700;
+
+  letter-spacing: 1.1px;
+}
+
+.modal-header h3 {
+  margin-top: 5px;
+
+  color: #101828;
+
+  font-size: 17px;
+  font-weight: 700;
+
+  letter-spacing: -0.2px;
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+
+  border: 0;
+  border-radius: 7px;
+
+  background: transparent;
+
+  color: #667085;
+
+  display: grid;
+  place-items: center;
+
+  font-size: 22px;
+  line-height: 1;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+}
+
+.modal-close:hover {
+  background: #f2f4f7;
+  color: #101828;
+}
+
+
+/* =====================================================
+   PERSONA
+===================================================== */
+
+.modal-person {
+  margin: 18px 22px;
+
+  padding: 13px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 11px;
+
+  background: #f9fafb;
+
+  border: 1px solid #eaecf0;
+
+  border-radius: 10px;
+}
+
+.modal-avatar {
+  width: 40px;
+  height: 40px;
+
+  flex-shrink: 0;
+
+  border-radius: 50%;
+
+  background: #e4e7ec;
+
+  color: #344054;
+
+  display: grid;
+  place-items: center;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.modal-person strong {
+  display: block;
+
+  color: #344054;
+
+  font-size: 12px;
+}
+
+.modal-person span {
+  display: block;
+
+  margin-top: 3px;
+
+  color: #98a2b3;
+
+  font-size: 9px;
+}
+
+
+/* =====================================================
+   FECHA
+===================================================== */
+
+.modal-date {
+  padding: 0 22px 15px;
+}
+
+.modal-date span {
+  display: block;
+
+  color: #98a2b3;
+
+  font-size: 8px;
+  font-weight: 700;
+
+  letter-spacing: 0.8px;
+}
+
+.modal-date strong {
+  display: block;
+
+  margin-top: 4px;
+
+  color: #344054;
+
+  font-size: 11px;
+
+  text-transform: capitalize;
+}
+
+
+/* =====================================================
+   OPCIONES
+===================================================== */
+
+.turno-options {
+  padding: 5px 22px 18px;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 9px;
+}
+
+.turno-option {
+  width: 100%;
+
+  min-height: 68px;
+
+  padding: 10px 12px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 11px;
+
+  border-radius: 10px;
+
+  cursor: pointer;
+
+  text-align: left;
+
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.turno-option:hover {
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 5px 12px rgba(16, 24, 40, 0.06);
+}
+
+.turno-option-icon {
+  width: 39px;
+  height: 39px;
+
+  flex-shrink: 0;
+
+  border-radius: 9px;
+
+  display: grid;
+  place-items: center;
+
+  font-size: 17px;
+}
+
+.turno-option > div:nth-child(2) {
+  flex: 1;
+}
+
+.turno-option strong {
+  display: block;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.turno-option span {
+  display: block;
+
+  margin-top: 3px;
+
+  font-size: 9px;
+}
+
+.turno-option b {
+  font-size: 17px;
+  font-weight: 400;
+}
+
+
+/* =====================================================
+   TURNO DÍA
+===================================================== */
+
+.turno-dia {
+  border: 1px solid #b2ddff;
+
+  background: #f8fbff;
+
+  color: #175cd3;
+}
+
+.turno-dia .turno-option-icon {
+  background: #eff8ff;
+}
+
+.turno-dia strong {
+  color: #175cd3;
+}
+
+.turno-dia span {
+  color: #667085;
+}
+
+
+/* =====================================================
+   TURNO NOCHE
+===================================================== */
+
+.turno-noche {
+  border: 1px solid #d9d6fe;
+
+  background: #fbfaff;
+
+  color: #6941c6;
+}
+
+.turno-noche .turno-option-icon {
+  background: #f4f3ff;
+}
+
+.turno-noche strong {
+  color: #6941c6;
+}
+
+.turno-noche span {
+  color: #667085;
+}
+
+
+/* =====================================================
+   FOOTER
+===================================================== */
+
+.modal-footer {
+  padding: 15px 22px;
+
+  display: flex;
+  justify-content: flex-end;
+
+  border-top: 1px solid #f2f4f7;
+
+  background: #fcfcfd;
+}
+
+.modal-cancel {
+  height: 36px;
+
+  padding: 0 14px;
+
+  border: 1px solid #d0d5dd;
+
+  border-radius: 7px;
+
+  background: #ffffff;
+
+  color: #344054;
+
+  font-family: inherit;
+
+  font-size: 10px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+}
+
+.modal-cancel:hover {
+  background: #f9fafb;
+}
+
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+
+@media (max-width: 500px) {
+  .modal-overlay {
+    padding: 12px;
+  }
+
+  .modal-turno {
+    max-width: 100%;
+    border-radius: 13px;
+  }
+
+  .modal-header {
+    padding: 17px;
+  }
+
+  .modal-person {
+    margin: 15px 17px;
+  }
+
+  .modal-date {
+    padding-left: 17px;
+    padding-right: 17px;
+  }
+
+  .turno-options {
+    padding-left: 17px;
+    padding-right: 17px;
+  }
+
+  .modal-footer {
+    padding-left: 17px;
+    padding-right: 17px;
+  }
+}

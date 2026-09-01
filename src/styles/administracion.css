@@ -1,0 +1,364 @@
+.administracion-page {
+  padding: 32px 38px 45px;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+
+.administracion-header {
+  margin-bottom: 22px;
+}
+
+.administracion-header .page-label {
+  color: #98a2b3;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+}
+
+.administracion-header h2 {
+  margin-top: 5px;
+  color: #101828;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.administracion-header p {
+  margin-top: 6px;
+  color: #667085;
+  font-size: 12px;
+}
+
+.administracion-grid {
+  display: grid;
+  grid-template-columns: 1.35fr 0.75fr;
+  gap: 20px;
+}
+
+.admin-panel {
+  background: #ffffff;
+  border: 1px solid #eaecf0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.admin-panel-header {
+  min-height: 82px;
+  padding: 20px 23px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #f2f4f7;
+}
+
+.admin-panel-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  background: #f2f4f7;
+  color: #344054;
+  display: grid;
+  place-items: center;
+  font-size: 17px;
+}
+
+.admin-panel-header span {
+  display: block;
+  color: #98a2b3;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.admin-panel-header h3 {
+  margin-top: 4px;
+  color: #101828;
+  font-size: 15px;
+}
+
+.admin-form {
+  padding: 23px;
+}
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  color: #344054;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.form-group input {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  outline: none;
+  color: #344054;
+  background: #ffffff;
+  font-family: inherit;
+  font-size: 11px;
+  transition: 0.2s ease;
+}
+
+.form-group input::placeholder {
+  color: #98a2b3;
+}
+
+.form-group input:focus {
+  border-color: #98a2b3;
+  box-shadow: 0 0 0 3px rgba(16, 24, 40, 0.05);
+}
+
+.form-section-title {
+  margin-top: 27px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eaecf0;
+  color: #344054;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.horarios-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.horario-card {
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px solid #eaecf0;
+}
+
+.horario-card.dia {
+  background: #f8fbff;
+}
+
+.horario-card.noche {
+  background: #fbf9ff;
+}
+
+.horario-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.horario-title span {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: #ffffff;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+}
+
+.horario-card.dia .horario-title span {
+  color: #175cd3;
+}
+
+.horario-card.noche .horario-title span {
+  color: #6941c6;
+}
+
+.horario-title strong {
+  color: #344054;
+  font-size: 11px;
+}
+
+.horario-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.horario-inputs label {
+  display: block;
+  margin-bottom: 5px;
+  color: #98a2b3;
+  font-size: 8px;
+  font-weight: 600;
+}
+
+.horario-inputs input {
+  width: 100%;
+  height: 35px;
+  padding: 0 7px;
+  border: 1px solid #d0d5dd;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #344054;
+  font-family: inherit;
+  font-size: 10px;
+  outline: none;
+}
+
+.horario-inputs input:focus {
+  border-color: #98a2b3;
+}
+
+.admin-form-footer {
+  margin-top: 23px;
+  padding-top: 18px;
+  border-top: 1px solid #eaecf0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.saved-message {
+  color: #027a48;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.btn-save-admin {
+  height: 40px;
+  padding: 0 17px;
+  border: 0;
+  border-radius: 8px;
+  background: #101828;
+  color: #ffffff;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  transition: 0.2s ease;
+}
+
+.btn-save-admin:hover {
+  background: #182230;
+}
+
+.system-status {
+  padding: 5px 23px 20px;
+}
+
+.status-row {
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid #f2f4f7;
+}
+
+.status-row > div {
+  min-width: 0;
+}
+
+.status-row strong {
+  display: block;
+  color: #344054;
+  font-size: 11px;
+}
+
+.status-row span:not(.status-active):not(.status-pending) {
+  display: block;
+  margin-top: 4px;
+  color: #98a2b3;
+  font-size: 9px;
+}
+
+.status-active,
+.status-pending {
+  flex-shrink: 0;
+  padding: 5px 8px;
+  border-radius: 5px;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.status-active {
+  background: #ecfdf3;
+  color: #027a48;
+}
+
+.status-pending {
+  background: #fffaeb;
+  color: #b54708;
+}
+
+.admin-info-box {
+  margin-top: 18px;
+  padding: 14px;
+  border: 1px solid #eaecf0;
+  border-radius: 9px;
+  background: #f9fafb;
+}
+
+.admin-info-box strong {
+  display: block;
+  color: #344054;
+  font-size: 10px;
+}
+
+.admin-info-box p {
+  margin-top: 5px;
+  color: #667085;
+  font-size: 9px;
+  line-height: 1.6;
+}
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+
+@media (max-width: 1000px) {
+  .administracion-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .administracion-page {
+    padding: 25px 20px 35px;
+  }
+
+  .horarios-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 500px) {
+  .administracion-page {
+    padding: 20px 12px 30px;
+  }
+
+  .admin-form {
+    padding: 18px;
+  }
+
+  .admin-panel-header {
+    padding: 18px;
+  }
+
+  .system-status {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .horario-inputs {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-form-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .btn-save-admin {
+    width: 100%;
+  }
+}

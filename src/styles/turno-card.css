@@ -1,0 +1,152 @@
+/* =====================================================
+   TARJETA DE TURNO
+===================================================== */
+
+.turno-card {
+  width: 100%;
+  min-height: 58px;
+
+  padding: 7px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 7px;
+
+  border-radius: 8px;
+
+  cursor: pointer;
+
+  font-family: inherit;
+
+  text-align: left;
+
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.turno-card:hover {
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 4px 10px rgba(16, 24, 40, 0.08);
+}
+
+.turno-card-icon {
+  width: 27px;
+  height: 27px;
+
+  flex-shrink: 0;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 6px;
+
+  font-size: 12px;
+}
+
+.turno-card-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.turno-card-content strong {
+  display: block;
+
+  font-size: 8px;
+  font-weight: 800;
+
+  letter-spacing: 0.5px;
+}
+
+.turno-card-content small {
+  display: block;
+
+  margin-top: 3px;
+
+  font-size: 7px;
+
+  white-space: nowrap;
+}
+
+
+/* =====================================================
+   TURNO DÍA
+===================================================== */
+
+.turno-card-dia {
+  border: 1px solid #b2ddff;
+
+  background: #eff8ff;
+
+  color: #175cd3;
+}
+
+.turno-card-dia .turno-card-icon {
+  background: #ffffff;
+}
+
+.turno-card-dia .turno-card-content strong {
+  color: #175cd3;
+}
+
+.turno-card-dia .turno-card-content small {
+  color: #667085;
+}
+
+
+/* =====================================================
+   TURNO NOCHE
+===================================================== */
+
+.turno-card-noche {
+  border: 1px solid #d9d6fe;
+
+  background: #f9f5ff;
+
+  color: #6941c6;
+}
+
+.turno-card-noche .turno-card-icon {
+  background: #ffffff;
+}
+
+.turno-card-noche .turno-card-content strong {
+  color: #6941c6;
+}
+
+.turno-card-noche .turno-card-content small {
+  color: #667085;
+}
+
+
+/* =====================================================
+   CELULAS PEQUEÑAS
+===================================================== */
+
+@media (max-width: 700px) {
+  .turno-card {
+    min-height: 50px;
+
+    padding: 5px;
+
+    gap: 5px;
+  }
+
+  .turno-card-icon {
+    width: 23px;
+    height: 23px;
+
+    font-size: 10px;
+  }
+
+  .turno-card-content strong {
+    font-size: 7px;
+  }
+
+  .turno-card-content small {
+    font-size: 6px;
+  }
+}

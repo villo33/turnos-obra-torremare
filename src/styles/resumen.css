@@ -1,0 +1,440 @@
+/* =====================================================
+   RESUMEN DE TURNOS
+===================================================== */
+
+.resumen-turnos {
+  margin-top: 20px;
+
+  background: #ffffff;
+
+  border: 1px solid #eaecf0;
+  border-radius: 12px;
+
+  overflow: hidden;
+}
+
+
+/* =====================================================
+   HEADER
+===================================================== */
+
+.resumen-header {
+  min-height: 78px;
+
+  padding: 20px 23px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  border-bottom: 1px solid #f2f4f7;
+}
+
+.resumen-header span {
+  display: block;
+
+  color: #98a2b3;
+
+  font-size: 8px;
+  font-weight: 700;
+
+  letter-spacing: 1px;
+}
+
+.resumen-header h3 {
+  margin-top: 4px;
+
+  color: #101828;
+
+  font-size: 15px;
+}
+
+.resumen-total {
+  min-width: 60px;
+
+  text-align: center;
+}
+
+.resumen-total strong {
+  display: block;
+
+  color: #101828;
+
+  font-size: 21px;
+}
+
+.resumen-total small {
+  display: block;
+
+  margin-top: 1px;
+
+  color: #98a2b3;
+
+  font-size: 8px;
+}
+
+
+/* =====================================================
+   ESTADÍSTICAS
+===================================================== */
+
+.resumen-stats {
+  padding: 16px 23px;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, 1fr);
+
+  gap: 12px;
+
+  border-bottom: 1px solid #f2f4f7;
+}
+
+.resumen-stat {
+  min-height: 62px;
+
+  padding: 10px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  border: 1px solid #eaecf0;
+
+  border-radius: 9px;
+}
+
+.resumen-stat-icon {
+  width: 34px;
+  height: 34px;
+
+  flex-shrink: 0;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 8px;
+
+  font-size: 14px;
+}
+
+.resumen-stat-icon.dia {
+  background: #eff8ff;
+  color: #175cd3;
+}
+
+.resumen-stat-icon.noche {
+  background: #f9f5ff;
+  color: #6941c6;
+}
+
+.resumen-stat-icon.personal {
+  background: #f2f4f7;
+  color: #344054;
+}
+
+.resumen-stat span {
+  display: block;
+
+  color: #667085;
+
+  font-size: 8px;
+}
+
+.resumen-stat strong {
+  display: block;
+
+  margin-top: 2px;
+
+  color: #101828;
+
+  font-size: 17px;
+}
+
+
+/* =====================================================
+   PERSONAL
+===================================================== */
+
+.resumen-personal {
+  padding: 0 23px;
+}
+
+.resumen-personal-header {
+  min-height: 38px;
+
+  display: grid;
+
+  grid-template-columns: 1fr auto;
+
+  align-items: center;
+
+  border-bottom: 1px solid #f2f4f7;
+}
+
+.resumen-personal-header span {
+  color: #98a2b3;
+
+  font-size: 8px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.8px;
+}
+
+.resumen-persona {
+  min-height: 66px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 15px;
+
+  border-bottom: 1px solid #f2f4f7;
+}
+
+.resumen-persona:last-child {
+  border-bottom: 0;
+}
+
+.resumen-persona-info {
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  min-width: 0;
+}
+
+.resumen-avatar {
+  width: 32px;
+  height: 32px;
+
+  flex-shrink: 0;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 50%;
+
+  background: #f2f4f7;
+
+  color: #344054;
+
+  font-size: 10px;
+
+  font-weight: 700;
+}
+
+.resumen-persona-info strong {
+  display: block;
+
+  color: #344054;
+
+  font-size: 10px;
+}
+
+.resumen-persona-info span {
+  display: block;
+
+  margin-top: 2px;
+
+  color: #98a2b3;
+
+  font-size: 8px;
+}
+
+
+/* =====================================================
+   TURNOS POR PERSONA
+===================================================== */
+
+.resumen-persona-turnos {
+  display: flex;
+
+  align-items: center;
+
+  gap: 6px;
+}
+
+.mini-turno,
+.mini-total {
+  min-width: 48px;
+
+  padding: 5px 7px;
+
+  border-radius: 5px;
+
+  text-align: center;
+}
+
+.mini-turno strong,
+.mini-total strong {
+  display: block;
+
+  font-size: 10px;
+}
+
+.mini-turno span,
+.mini-total span {
+  display: block;
+
+  margin-top: 1px;
+
+  font-size: 7px;
+}
+
+.mini-turno.dia {
+  background: #eff8ff;
+
+  color: #175cd3;
+}
+
+.mini-turno.noche {
+  background: #f9f5ff;
+
+  color: #6941c6;
+}
+
+.mini-total {
+  background: #f2f4f7;
+
+  color: #344054;
+}
+
+
+/* =====================================================
+   RESUMEN POR DÍA
+===================================================== */
+
+.resumen-dias {
+  padding: 15px 23px;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(7, 1fr);
+
+  gap: 7px;
+
+  border-top: 1px solid #f2f4f7;
+
+  background: #fcfcfd;
+}
+
+.resumen-dia {
+  min-height: 62px;
+
+  padding: 8px 5px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid #eaecf0;
+
+  border-radius: 7px;
+
+  background: #ffffff;
+
+  text-align: center;
+}
+
+.resumen-dia span {
+  color: #98a2b3;
+
+  font-size: 7px;
+
+  font-weight: 700;
+}
+
+.resumen-dia strong {
+  margin-top: 3px;
+
+  color: #344054;
+
+  font-size: 13px;
+}
+
+.resumen-dia small {
+  margin-top: 3px;
+
+  color: #667085;
+
+  font-size: 7px;
+}
+
+
+/* =====================================================
+   VACÍO
+===================================================== */
+
+.resumen-vacio {
+  padding: 35px 10px;
+
+  color: #98a2b3;
+
+  text-align: center;
+
+  font-size: 10px;
+}
+
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+
+@media (max-width: 800px) {
+  .resumen-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .resumen-dias {
+    grid-template-columns:
+      repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 550px) {
+  .resumen-header {
+    padding: 17px;
+  }
+
+  .resumen-stats {
+    padding: 13px 17px;
+  }
+
+  .resumen-personal {
+    padding: 0 17px;
+  }
+
+  .resumen-persona {
+    min-height: 70px;
+  }
+
+  .resumen-persona-turnos {
+    gap: 3px;
+  }
+
+  .mini-turno,
+  .mini-total {
+    min-width: 35px;
+
+    padding: 5px 4px;
+  }
+
+  .resumen-dias {
+    padding: 12px 17px;
+
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+}
