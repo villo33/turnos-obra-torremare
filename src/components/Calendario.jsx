@@ -396,21 +396,23 @@ function Calendario({
                     >
 
                       {turno ? (
+  <TurnoCard
+    tipo={turno}
+    onClick={() => {
+      if (!puedeEditar) return;
 
-                        <TurnoCard
-                          tipo={turno}
-                          onClick={
-                            puedeEditar
-                              ? () =>
-                                  eliminarCelda(
-                                    fecha,
-                                    trabajador
-                                  )
-                              : undefined
-                          }
-                        />
+      const confirmar = window.confirm(
+        `¿Eliminar el turno de ${trabajador.nombre}?\n\n` +
+        `Fecha: ${fecha.toLocaleDateString("es-CO")}\n` +
+        `Turno: ${turno === "dia" ? "DÍA" : "NOCHE"}`
+      );
 
-                      ) : (
+      if (confirmar) {
+        eliminarCelda(fecha, trabajador);
+      }
+    }}
+  />
+) : (
 
                         <button
                           type="button"
