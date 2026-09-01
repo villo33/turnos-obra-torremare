@@ -1,30 +1,23 @@
 import { useMemo, useState } from "react";
 import TurnoCard from "./TurnoCard";
-import ModalTurno from "./ModalTurno";
 
 function Calendario({
   trabajadores = [],
   turnos = {},
-  setTurnos,
+  onSeleccionarTurno,
+  onEliminarTurno,
+  puedeEditar = false,
 }) {
   const [fechaInicio, setFechaInicio] = useState(() => {
     const fecha = new Date();
-
     fecha.setHours(0, 0, 0, 0);
 
     const dia = fecha.getDay();
-
     const diferencia = dia === 0 ? -6 : 1 - dia;
 
     fecha.setDate(fecha.getDate() + diferencia);
 
     return fecha;
-  });
-
-  const [modal, setModal] = useState({
-    abierto: false,
-    fecha: null,
-    trabajador: null,
   });
 
   const dias = useMemo(() => {
@@ -96,7 +89,6 @@ function Calendario({
     fecha.setHours(0, 0, 0, 0);
 
     const dia = fecha.getDay();
-
     const diferencia = dia === 0 ? -6 : 1 - dia;
 
     fecha.setDate(
@@ -104,92 +96,6 @@ function Calendario({
     );
 
     setFechaInicio(fecha);
-  };
-
-  const abrirModal = (fecha, trabajador) => {
-    setModal({
-      abierto: true,
-      fecha,
-      trabajador,
-    });
-  };
-
-  const cerrarModal = () => {
-    setModal({
-      abierto: false,
-      fecha: null,
-      trabajador: null,
-    });
-  };
-
-  const asignarTurno = (tipo) => {
-    if (
-      !modal.fecha ||
-      !modal.trabajador ||
-      !setTurnos
-    ) {
-      return;
-    }
-
-    const claveFecha = obtenerClaveFecha(
-      modal.fecha
-    );
-
-    const trabajadorId =
-      modal.trabajador.id;
-
-    setTurnos((actuales) => {
-
-      const copia = {
-        ...actuales,
-      };
-
-      const turnosDia = {
-        ...(copia[claveFecha] || {}),
-      };
-
-      turnosDia[trabajadorId] = tipo;
-
-      copia[claveFecha] = turnosDia;
-
-      return copia;
-    });
-
-    cerrarModal();
-  };
-
-  const quitarTurno = (fecha, trabajador) => {
-    if (!setTurnos) {
-      return;
-    }
-
-    const claveFecha =
-      obtenerClaveFecha(fecha);
-
-    setTurnos((actuales) => {
-
-      const copia = {
-        ...actuales,
-      };
-
-      if (!copia[claveFecha]) {
-        return copia;
-      }
-
-      const turnosDia = {
-        ...copia[claveFecha],
-      };
-
-      delete turnosDia[trabajador.id];
-
-      if (Object.keys(turnosDia).length === 0) {
-        delete copia[claveFecha];
-      } else {
-        copia[claveFecha] = turnosDia;
-      }
-
-      return copia;
-    });
   };
 
   const obtenerTurno = (fecha, trabajador) => {
@@ -203,33 +109,58 @@ function Calendario({
     );
   };
 
-  const cantidadTurnos = Object.values(
-    turnos || {}
-  ).reduce((total, dia) => {
-    return total + Object.keys(dia).length;
-  }, 0);
-
-  const cantidadDias = Object.values(
-    turnos || {}
-  ).reduce((total, dia) => {
-    return (
-      total +
-      Object.values(dia).filter(
-        (turno) => turno === "dia"
-      ).length
+  const cantidadTurnos =
+    Object.values(turnos || {}).reduce(
+      (total, dia) =>
+        total + Object.keys(dia || {}).length,
+      0
     );
-  }, 0);
 
-  const cantidadNoches = Object.values(
-    turnos || {}
-  ).reduce((total, dia) => {
-    return (
-      total +
-      Object.values(dia).filter(
-        (turno) => turno === "noche"
-      ).length
+  const cantidadDias =
+    Object.values(turnos || {}).reduce(
+      (total, dia) =>
+        total +
+        Object.values(dia || {}).filter(
+          (turno) => turno === "dia"
+        ).length,
+      0
     );
-  }, 0);
+
+  const cantidadNoches =
+    Object.values(turnos || {}).reduce(
+      (total, dia) =>
+        total +
+        Object.values(dia || {}).filter(
+          (turno) => turno === "noche"
+        ).length,
+      0
+    );
+
+  const seleccionarCelda = (fecha, trabajador) => {
+    if (!puedeEditar) {
+      return;
+    }
+
+    if (onSeleccionarTurno) {
+      onSeleccionarTurno(
+        fecha,
+        trabajador
+      );
+    }
+  };
+
+  const eliminarCelda = (fecha, trabajador) => {
+    if (!puedeEditar) {
+      return;
+    }
+
+    if (onEliminarTurno) {
+      onEliminarTurno(
+        fecha,
+        trabajador
+      );
+    }
+  };
 
   return (
     <>
@@ -245,10 +176,10 @@ function Calendario({
           </h3>
 
           <p>
-            Organiza y consulta los turnos del personal de la obra.
+            Organiza y consulta los turnos
+            del personal de la obra.
           </p>
         </div>
-
 
         <div className="calendario-actions">
 
@@ -283,9 +214,7 @@ function Calendario({
           </button>
 
         </div>
-
       </div>
-
 
       <div className="week-info">
 
@@ -300,7 +229,6 @@ function Calendario({
             {dias[6].getDate()}
           </span>
         </div>
-
 
         <div className="legend">
 
@@ -323,7 +251,6 @@ function Calendario({
 
       </div>
 
-
       <div className="calendar-container">
 
         <div className="calendar-grid">
@@ -331,7 +258,6 @@ function Calendario({
           <div className="corner-cell">
             PERSONAL / DÍAS
           </div>
-
 
           {dias.map((fecha) => (
             <div
@@ -359,7 +285,6 @@ function Calendario({
 
             </div>
           ))}
-
 
           {trabajadores.map((trabajador) => (
 
@@ -390,7 +315,6 @@ function Calendario({
 
               </div>
 
-
               {dias.map((fecha) => {
 
                 const turno =
@@ -399,6 +323,11 @@ function Calendario({
                     trabajador
                   );
 
+                const clave =
+                  `${trabajador.id}-${obtenerClaveFecha(
+                    fecha
+                  )}`;
+
                 return (
                   <div
                     className={`shift-cell ${
@@ -406,9 +335,7 @@ function Calendario({
                         ? "today-cell"
                         : ""
                     }`}
-                    key={`${trabajador.id}-${obtenerClaveFecha(
-                      fecha
-                    )}`}
+                    key={clave}
                   >
 
                     {turno ? (
@@ -416,7 +343,7 @@ function Calendario({
                       <TurnoCard
                         tipo={turno}
                         onClick={() =>
-                          quitarTurno(
+                          eliminarCelda(
                             fecha,
                             trabajador
                           )
@@ -427,16 +354,24 @@ function Calendario({
 
                       <button
                         type="button"
-                        className="free-cell"
+                        className={`free-cell ${
+                          !puedeEditar
+                            ? "view-only"
+                            : ""
+                        }`}
                         onClick={() =>
-                          abrirModal(
+                          seleccionarCelda(
                             fecha,
                             trabajador
                           )
                         }
-                        title="Asignar turno"
+                        title={
+                          puedeEditar
+                            ? "Asignar turno"
+                            : "Día libre"
+                        }
                       >
-                        +
+                        {puedeEditar ? "+" : "—"}
                       </button>
 
                     )}
@@ -451,7 +386,6 @@ function Calendario({
         </div>
 
       </div>
-
 
       <div className="calendar-footer">
 
@@ -486,15 +420,6 @@ function Calendario({
         </div>
 
       </div>
-
-
-      <ModalTurno
-        abierto={modal.abierto}
-        fecha={modal.fecha}
-        trabajador={modal.trabajador}
-        onSeleccionar={asignarTurno}
-        onCerrar={cerrarModal}
-      />
     </>
   );
 }

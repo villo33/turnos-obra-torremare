@@ -1,7 +1,12 @@
 import { useState } from "react";
 
-function Navbar({ paginaActual, cambiarPagina }) {
-  const [menuAbierto, setMenuAbierto] = useState(false);
+function Navbar({
+  paginaActual,
+  cambiarPagina,
+  esAdministrador = false,
+}) {
+  const [menuAbierto, setMenuAbierto] =
+    useState(false);
 
   const opciones = [
     {
@@ -14,17 +19,22 @@ function Navbar({ paginaActual, cambiarPagina }) {
       icono: "▦",
       nombre: "Calendario",
     },
-    {
-      id: "trabajadores",
-      icono: "♙",
-      nombre: "Trabajadores",
-    },
-    {
-      id: "administracion",
-      icono: "⚙",
-      nombre: "Administración",
-    },
   ];
+
+  if (esAdministrador) {
+    opciones.push(
+      {
+        id: "trabajadores",
+        icono: "♙",
+        nombre: "Trabajadores",
+      },
+      {
+        id: "administracion",
+        icono: "⚙",
+        nombre: "Administración",
+      }
+    );
+  }
 
   const seleccionarPagina = (pagina) => {
     cambiarPagina(pagina);
@@ -36,7 +46,9 @@ function Navbar({ paginaActual, cambiarPagina }) {
       <button
         type="button"
         className="mobile-menu-button"
-        onClick={() => setMenuAbierto(!menuAbierto)}
+        onClick={() =>
+          setMenuAbierto(!menuAbierto)
+        }
         aria-label="Abrir menú"
       >
         ☰
@@ -45,15 +57,20 @@ function Navbar({ paginaActual, cambiarPagina }) {
       {menuAbierto && (
         <div
           className="mobile-menu-overlay"
-          onClick={() => setMenuAbierto(false)}
+          onClick={() =>
+            setMenuAbierto(false)
+          }
         />
       )}
 
       <aside
         className={`sidebar ${
-          menuAbierto ? "sidebar-open" : ""
+          menuAbierto
+            ? "sidebar-open"
+            : ""
         }`}
       >
+
         <div className="brand">
 
           <div className="brand-icon">
@@ -85,12 +102,15 @@ function Navbar({ paginaActual, cambiarPagina }) {
               type="button"
               key={opcion.id}
               className={`menu-item ${
-                paginaActual === opcion.id
+                paginaActual ===
+                opcion.id
                   ? "active"
                   : ""
               }`}
               onClick={() =>
-                seleccionarPagina(opcion.id)
+                seleccionarPagina(
+                  opcion.id
+                )
               }
             >
 
@@ -114,17 +134,25 @@ function Navbar({ paginaActual, cambiarPagina }) {
           <div className="user-mini">
 
             <div className="avatar">
-              J
+              {esAdministrador
+                ? "A"
+                : "T"}
             </div>
 
             <div>
+
               <strong>
-                Administración
+                {esAdministrador
+                  ? "Administración"
+                  : "Trabajador"}
               </strong>
 
               <span>
-                Control de obra
+                {esAdministrador
+                  ? "Control de obra"
+                  : "Personal de obra"}
               </span>
+
             </div>
 
           </div>

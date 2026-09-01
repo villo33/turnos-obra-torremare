@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { supabase } from "../services/supabase";
 
 function Trabajadores({
   trabajadores = [],
@@ -7,48 +8,98 @@ function Trabajadores({
   const [nombre, setNombre] = useState("");
   const [cargo, setCargo] = useState("Vigilante");
   const [editando, setEditando] = useState(null);
+  const [guardando, setGuardando] = useState(false);
 
-  const guardarTrabajador = (e) => {
+  const guardarTrabajador = async (e) => {
     e.preventDefault();
 
     const nombreLimpio = nombre.trim();
-    const cargoLimpio = cargo.trim();
+    const cargoLimpio = cargo.trim() || "Vigilante";
 
-    if (!nombreLimpio) {
+    if (!nombreLimpio || guardando) {
       return;
     }
 
-    if (editando !== null) {
-      setTrabajadores((actuales) =>
-        actuales.map((trabajador) =>
-          trabajador.id === editando
-            ? {
-                ...trabajador,
-                nombre: nombreLimpio,
-                cargo: cargoLimpio || "Vigilante",
-              }
-            : trabajador
-        )
+    try {
+      setGuardando(true);
+
+      /* =====================================================
+         EDITAR TRABAJADOR
+      ===================================================== */
+
+      if (editando !== null) {
+        const { data, error } = await supabase
+          .from("obra_trabajadores")
+          .update({
+            nombre: nombreLimpio,
+            cargo: cargoLimpio,
+          })
+          .eq("id", editando)
+          .select()
+          .single();
+
+        if (error) {
+          throw error;
+        }
+
+        setTrabajadores((actuales) =>
+          actuales.map((trabajador) =>
+            trabajador.id === editando
+              ? data
+              : trabajador
+          )
+        );
+
+        cancelarEdicion();
+        return;
+      }
+
+      /* =====================================================
+         AGREGAR TRABAJADOR
+      ===================================================== */
+
+      const { data, error } = await supabase
+        .from("obra_trabajadores")
+        .insert([
+          {
+            nombre: nombreLimpio,
+            cargo: cargoLimpio,
+            activo: true,
+          },
+        ])
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      setTrabajadores((actuales) => [
+        ...actuales,
+        data,
+      ]);
+
+      setNombre("");
+      setCargo("Vigilante");
+
+    } catch (error) {
+      console.error(
+        "Error guardando trabajador:",
+        error
       );
 
-      cancelarEdicion();
-      return;
+      alert(
+        `No se pudo guardar el trabajador.\n\n${error.message}`
+      );
+
+    } finally {
+      setGuardando(false);
     }
-
-    const nuevoTrabajador = {
-      id: Date.now(),
-      nombre: nombreLimpio,
-      cargo: cargoLimpio || "Vigilante",
-    };
-
-    setTrabajadores((actuales) => [
-      ...actuales,
-      nuevoTrabajador,
-    ]);
-
-    setNombre("");
-    setCargo("Vigilante");
   };
+
+  /* =====================================================
+     EDITAR
+  ===================================================== */
 
   const editarTrabajador = (trabajador) => {
     setEditando(trabajador.id);
@@ -56,29 +107,61 @@ function Trabajadores({
     setCargo(trabajador.cargo || "Vigilante");
   };
 
-  const eliminarTrabajador = (id) => {
+  /* =====================================================
+     ELIMINAR
+  ===================================================== */
+
+  const eliminarTrabajador = async (id) => {
     const trabajador = trabajadores.find(
       (item) => item.id === id
     );
 
     const confirmar = window.confirm(
-      `¿Deseas eliminar a ${trabajador?.nombre || "este trabajador"}?`
+      `¿Deseas eliminar a ${
+        trabajador?.nombre || "este trabajador"
+      }?`
     );
 
     if (!confirmar) {
       return;
     }
 
-    setTrabajadores((actuales) =>
-      actuales.filter(
-        (trabajador) => trabajador.id !== id
-      )
-    );
+    try {
+      const { error } = await supabase
+        .from("obra_trabajadores")
+        .delete()
+        .eq("id", id);
 
-    if (editando === id) {
-      cancelarEdicion();
+      if (error) {
+        throw error;
+      }
+
+      setTrabajadores((actuales) =>
+        actuales.filter(
+          (trabajador) =>
+            trabajador.id !== id
+        )
+      );
+
+      if (editando === id) {
+        cancelarEdicion();
+      }
+
+    } catch (error) {
+      console.error(
+        "Error eliminando trabajador:",
+        error
+      );
+
+      alert(
+        `No se pudo eliminar el trabajador.\n\n${error.message}`
+      );
     }
   };
+
+  /* =====================================================
+     CANCELAR EDICIÓN
+  ===================================================== */
 
   const cancelarEdicion = () => {
     setEditando(null);
@@ -119,7 +202,6 @@ function Trabajadores({
 
       </div>
 
-
       <div className="trabajadores-grid">
 
         <section className="trabajadores-panel">
@@ -137,7 +219,6 @@ function Trabajadores({
             </div>
 
           </div>
-
 
           <div className="trabajadores-list">
 
@@ -159,7 +240,6 @@ function Trabajadores({
               </div>
             )}
 
-
             {trabajadores.map((trabajador) => {
 
               const inicial =
@@ -178,7 +258,6 @@ function Trabajadores({
                     {inicial}
                   </div>
 
-
                   <div className="trabajador-info">
 
                     <strong>
@@ -191,7 +270,6 @@ function Trabajadores({
 
                   </div>
 
-
                   <div className="trabajador-actions">
 
                     <button
@@ -203,7 +281,6 @@ function Trabajadores({
                     >
                       Editar
                     </button>
-
 
                     <button
                       type="button"
@@ -227,7 +304,6 @@ function Trabajadores({
 
         </section>
 
-
         <section className="trabajador-form-panel">
 
           <div className="panel-title">
@@ -250,7 +326,6 @@ function Trabajadores({
 
           </div>
 
-
           <form
             className="trabajador-form"
             onSubmit={guardarTrabajador}
@@ -270,10 +345,10 @@ function Trabajadores({
                 }
                 placeholder="Ej. Carlos Pérez"
                 autoComplete="off"
+                disabled={guardando}
               />
 
             </div>
-
 
             <div>
 
@@ -289,28 +364,31 @@ function Trabajadores({
                 }
                 placeholder="Ej. Vigilante"
                 autoComplete="off"
+                disabled={guardando}
               />
 
             </div>
-
 
             <div className="form-buttons">
 
               <button
                 type="submit"
                 className="btn-save"
+                disabled={guardando}
               >
-                {editando !== null
-                  ? "Guardar cambios"
-                  : "Agregar trabajador"}
+                {guardando
+                  ? "Guardando..."
+                  : editando !== null
+                    ? "Guardar cambios"
+                    : "Agregar trabajador"}
               </button>
-
 
               {editando !== null && (
                 <button
                   type="button"
                   className="btn-cancel"
                   onClick={cancelarEdicion}
+                  disabled={guardando}
                 >
                   Cancelar
                 </button>

@@ -11,6 +11,7 @@ import "./styles/administracion.css";
 import "./styles/modal.css";
 import "./styles/turno-card.css";
 import "./styles/resumen.css";
+import "./styles/login.css";
 
 ReactDOM.createRoot(
   document.getElementById("root")
