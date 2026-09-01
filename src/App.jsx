@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import TurnoCard from "./TurnoCard";
 
 function Calendario({
   trabajadores = [],
