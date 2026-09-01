@@ -1,524 +1,461 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
-function Calendario({
-  trabajadores = [],
-  turnos = {},
-  onSeleccionarTurno,
-  onEliminarTurno,
-  esAdministrador = false,
-}) {
+import Navbar from "./components/Navbar";
 
-  const [fechaInicio, setFechaInicio] = useState(() => {
-    const fecha = new Date();
+import Inicio from "./pages/Inicio";
+import CalendarioPage from "./pages/CalendarioPage";
+import Trabajadores from "./pages/Trabajadores";
+import Administracion from "./pages/Administracion";
+import Login from "./pages/Login";
 
-    fecha.setHours(0, 0, 0, 0);
+import { supabase } from "./services/supabase";
+import { obtenerTrabajadores } from "./services/trabajadoresService";
 
-    const dia = fecha.getDay();
+function App() {
+  const [sesion, setSesion] = useState(null);
+  const [perfil, setPerfil] = useState(null);
 
-    const diferencia =
-      dia === 0 ? -6 : 1 - dia;
+  const [comprobandoSesion, setComprobandoSesion] =
+    useState(true);
 
-    fecha.setDate(
-      fecha.getDate() + diferencia
-    );
+  const [paginaActual, setPaginaActual] =
+    useState("inicio");
 
-    return fecha;
-  });
+  const [trabajadores, setTrabajadores] =
+    useState([]);
 
+  const [turnos, setTurnos] =
+    useState({});
 
-  const dias = useMemo(() => {
+  const [cargandoTrabajadores, setCargandoTrabajadores] =
+    useState(false);
 
-    return Array.from(
-      { length: 7 },
-      (_, indice) => {
+  /* =====================================================
+     OBTENER PERFIL
+  ===================================================== */
 
-        const fecha =
-          new Date(fechaInicio);
+  const obtenerPerfil = async (usuario) => {
+    if (!usuario) {
+      setPerfil(null);
+      return null;
+    }
 
-        fecha.setDate(
-          fechaInicio.getDate() + indice
+    const { data, error } = await supabase
+      .from("obra_perfiles")
+      .select(`
+        id,
+        nombre,
+        rol,
+        trabajador_id,
+        activo
+      `)
+      .eq("id", usuario.id)
+      .single();
+
+    if (error) {
+      console.error(
+        "Error obteniendo perfil:",
+        error
+      );
+
+      await supabase.auth.signOut();
+
+      setSesion(null);
+      setPerfil(null);
+
+      return null;
+    }
+
+    if (!data.activo) {
+      await supabase.auth.signOut();
+
+      setSesion(null);
+      setPerfil(null);
+
+      return null;
+    }
+
+    setPerfil(data);
+
+    return data;
+  };
+
+  /* =====================================================
+     COMPROBAR SESIÓN
+  ===================================================== */
+
+  useEffect(() => {
+    let montado = true;
+
+    const comprobarSesion = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (!montado) {
+          return;
+        }
+
+        if (session) {
+          setSesion(session);
+          await obtenerPerfil(session.user);
+        } else {
+          setSesion(null);
+          setPerfil(null);
+        }
+      } catch (error) {
+        console.error(
+          "Error comprobando sesión:",
+          error
         );
 
-        return fecha;
-      }
-    );
-
-  }, [fechaInicio]);
-
-
-  const obtenerClaveFecha = (fecha) => {
-
-    const year =
-      fecha.getFullYear();
-
-    const month =
-      String(
-        fecha.getMonth() + 1
-      ).padStart(2, "0");
-
-    const day =
-      String(
-        fecha.getDate()
-      ).padStart(2, "0");
-
-    return `${year}-${month}-${day}`;
-  };
-
-
-  const esHoy = (fecha) => {
-
-    const hoy = new Date();
-
-    return (
-      hoy.getFullYear() ===
-        fecha.getFullYear() &&
-      hoy.getMonth() ===
-        fecha.getMonth() &&
-      hoy.getDate() ===
-        fecha.getDate()
-    );
-  };
-
-
-  const nombreDia = (fecha) => {
-
-    return fecha
-      .toLocaleDateString(
-        "es-CO",
-        {
-          weekday: "short",
+        if (montado) {
+          setSesion(null);
+          setPerfil(null);
         }
-      )
-      .replace(".", "")
-      .toUpperCase();
-  };
+      } finally {
+        if (montado) {
+          setComprobandoSesion(false);
+        }
+      }
+    };
 
+    comprobarSesion();
 
-  const nombreMes = (fecha) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        if (!montado) {
+          return;
+        }
 
-    return fecha.toLocaleDateString(
-      "es-CO",
-      {
-        month: "long",
+        setSesion(session);
+
+        if (session) {
+          await obtenerPerfil(session.user);
+        } else {
+          setPerfil(null);
+        }
       }
     );
+
+    return () => {
+      montado = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  /* =====================================================
+     CARGAR TRABAJADORES
+  ===================================================== */
+
+  useEffect(() => {
+    if (!sesion || !perfil) {
+      return;
+    }
+
+    async function cargarTrabajadores() {
+      try {
+        setCargandoTrabajadores(true);
+
+        const datos =
+          await obtenerTrabajadores();
+
+        setTrabajadores(datos);
+      } catch (error) {
+        console.error(
+          "Error cargando trabajadores:",
+          error
+        );
+      } finally {
+        setCargandoTrabajadores(false);
+      }
+    }
+
+    cargarTrabajadores();
+  }, [sesion, perfil]);
+
+  /* =====================================================
+     CERRAR SESIÓN
+  ===================================================== */
+
+  const cerrarSesion = async () => {
+    await supabase.auth.signOut();
+
+    setSesion(null);
+    setPerfil(null);
+    setPaginaActual("inicio");
+    setTrabajadores([]);
+    setTurnos({});
   };
 
+  /* =====================================================
+     CAMBIAR PÁGINA
+  ===================================================== */
 
-  const cambiarSemana = (cantidad) => {
+  const cambiarPagina = (pagina) => {
+    if (
+      perfil?.rol !== "admin" &&
+      (
+        pagina === "trabajadores" ||
+        pagina === "administracion"
+      )
+    ) {
+      setPaginaActual("inicio");
+      return;
+    }
 
-    setFechaInicio((actual) => {
-
-      const nueva =
-        new Date(actual);
-
-      nueva.setDate(
-        actual.getDate() +
-          cantidad * 7
-      );
-
-      return nueva;
-    });
+    setPaginaActual(pagina);
   };
 
+  /* =====================================================
+     MOSTRAR PÁGINA
+  ===================================================== */
 
-  const irHoy = () => {
+  const mostrarPagina = () => {
+    switch (paginaActual) {
 
-    const fecha = new Date();
+      case "calendario":
+        return (
+          <CalendarioPage
+            trabajadores={trabajadores}
+            turnos={turnos}
+            setTurnos={setTurnos}
+            esAdministrador={
+              perfil?.rol === "admin"
+            }
+          />
+        );
 
-    fecha.setHours(0, 0, 0, 0);
+      case "trabajadores":
 
-    const dia = fecha.getDay();
+        if (perfil?.rol !== "admin") {
+          return (
+            <Inicio
+              trabajadores={trabajadores}
+              turnos={turnos}
+              onIrCalendario={() =>
+                cambiarPagina("calendario")
+              }
+            />
+          );
+        }
 
-    const diferencia =
-      dia === 0 ? -6 : 1 - dia;
+        return (
+          <Trabajadores
+            trabajadores={trabajadores}
+            setTrabajadores={setTrabajadores}
+          />
+        );
 
-    fecha.setDate(
-      fecha.getDate() + diferencia
-    );
+      case "administracion":
 
-    setFechaInicio(fecha);
+        if (perfil?.rol !== "admin") {
+          return (
+            <Inicio
+              trabajadores={trabajadores}
+              turnos={turnos}
+              onIrCalendario={() =>
+                cambiarPagina("calendario")
+              }
+            />
+          );
+        }
+
+        return <Administracion />;
+
+      case "inicio":
+      default:
+        return (
+          <Inicio
+            trabajadores={trabajadores}
+            turnos={turnos}
+            onIrCalendario={() =>
+              cambiarPagina("calendario")
+            }
+          />
+        );
+    }
   };
 
+  /* =====================================================
+     TÍTULOS
+  ===================================================== */
 
-  const obtenerTurno = (
-    fecha,
-    trabajador
-  ) => {
+  const tituloPagina = {
+    inicio: "Panel principal",
+    calendario: "Calendario de turnos",
+    trabajadores: "Trabajadores",
+    administracion: "Administración",
+  };
 
-    const claveFecha =
-      obtenerClaveFecha(fecha);
+  /* =====================================================
+     COMPROBANDO SESIÓN
+  ===================================================== */
 
+  if (comprobandoSesion) {
     return (
-      turnos?.[claveFecha]?.[
-        trabajador.id
-      ] || null
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#f5f7fa",
+          color: "#344054",
+          fontFamily:
+            "Inter, system-ui, sans-serif",
+        }}
+      >
+        <strong>
+          Comprobando sesión...
+        </strong>
+      </div>
     );
-  };
+  }
 
+  /* =====================================================
+     LOGIN
+  ===================================================== */
 
-  const cantidadTurnos =
-    Object.values(turnos || {})
-      .reduce(
-        (total, dia) =>
-          total +
-          Object.keys(dia).length,
-        0
-      );
+  if (!sesion || !perfil) {
+    return (
+      <Login
+        onLogin={async (resultado) => {
+          const usuario =
+            resultado?.usuario || resultado;
 
+          const perfilLogin =
+            resultado?.perfil || null;
 
-  const cantidadDias =
-    Object.values(turnos || {})
-      .reduce(
-        (total, dia) =>
-          total +
-          Object.values(dia)
-            .filter(
-              (turno) =>
-                turno === "dia"
-            )
-            .length,
-        0
-      );
+          setSesion({
+            user: usuario,
+          });
 
+          if (perfilLogin) {
+            setPerfil(perfilLogin);
+          } else {
+            await obtenerPerfil(usuario);
+          }
+        }}
+      />
+    );
+  }
 
-  const cantidadNoches =
-    Object.values(turnos || {})
-      .reduce(
-        (total, dia) =>
-          total +
-          Object.values(dia)
-            .filter(
-              (turno) =>
-                turno === "noche"
-            )
-            .length,
-        0
-      );
+  /* =====================================================
+     INFORMACIÓN DEL USUARIO
+  ===================================================== */
 
+  const esAdministrador =
+    perfil.rol === "admin";
+
+  const nombreUsuario =
+    perfil.nombre ||
+    sesion.user.email ||
+    "Usuario";
+
+  const inicial =
+    nombreUsuario
+      ?.trim()
+      ?.charAt(0)
+      ?.toUpperCase() || "U";
+
+  /* =====================================================
+     APLICACIÓN
+  ===================================================== */
 
   return (
-    <>
+    <div className="app">
 
-      <div className="calendario-header">
+      <Navbar
+        paginaActual={paginaActual}
+        cambiarPagina={cambiarPagina}
+        esAdministrador={esAdministrador}
+      />
 
-        <div>
+      <div className="main-content">
 
-          <span className="calendario-label">
-            PROGRAMACIÓN SEMANAL
-          </span>
+        <header className="topbar">
 
-          <h3>
-            Calendario de turnos
-          </h3>
+          <div>
 
-          <p>
-            {esAdministrador
-              ? "Organiza y asigna los turnos del personal de la obra."
-              : "Consulta los turnos programados de todo el personal."}
-          </p>
+            <span className="breadcrumb">
+              TORRE MARE / CONTROL DE OBRA
+            </span>
 
-        </div>
+            <h2>
+              {tituloPagina[paginaActual]}
+            </h2>
 
-
-        <div className="calendario-actions">
-
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={irHoy}
-          >
-            Hoy
-          </button>
-
-
-          <button
-            type="button"
-            className="btn-arrow"
-            onClick={() =>
-              cambiarSemana(-1)
-            }
-            title="Semana anterior"
-          >
-            ‹
-          </button>
-
-
-          <button
-            type="button"
-            className="btn-arrow"
-            onClick={() =>
-              cambiarSemana(1)
-            }
-            title="Semana siguiente"
-          >
-            ›
-          </button>
-
-        </div>
-
-      </div>
-
-
-      <div className="week-info">
-
-        <div>
-
-          <strong>
-            {nombreMes(dias[0])}
-          </strong>
-
-          <span>
-            {" "}
-            {dias[0].getDate()} —{" "}
-            {dias[6].getDate()}
-          </span>
-
-        </div>
-
-
-        <div className="legend">
-
-          <span>
-            <i className="legend-day"></i>
-            Día
-          </span>
-
-          <span>
-            <i className="legend-night"></i>
-            Noche
-          </span>
-
-          <span>
-            <i className="legend-free"></i>
-            Libre
-          </span>
-
-        </div>
-
-      </div>
-
-
-      <div className="calendar-container">
-
-        <div className="calendar-grid">
-
-          <div className="corner-cell">
-            PERSONAL / DÍAS
           </div>
 
+          <div className="topbar-actions">
 
-          {dias.map((fecha) => (
-
-            <div
-              className={`day-header ${
-                esHoy(fecha)
-                  ? "today"
-                  : ""
-              }`}
-              key={obtenerClaveFecha(fecha)}
+            <button
+              type="button"
+              className="notification"
+              title="Notificaciones"
             >
+              ♢
+            </button>
 
-              <span>
-                {nombreDia(fecha)}
-              </span>
+            <div className="profile">
 
-              <strong>
-                {fecha.getDate()}
-              </strong>
+              <div className="avatar">
+                {inicial}
+              </div>
 
-              {esHoy(fecha) && (
-                <small>
-                  HOY
-                </small>
-              )}
+              <div>
 
-            </div>
+                <strong>
+                  {nombreUsuario}
+                </strong>
 
-          ))}
-
-
-          {trabajadores.map(
-            (trabajador) => (
-
-              <div
-                className="worker-row"
-                key={trabajador.id}
-              >
-
-                <div className="worker-name">
-
-                  <div className="worker-avatar">
-
-                    {trabajador.nombre
-                      ?.trim()
-                      ?.charAt(0)
-                      ?.toUpperCase() ||
-                      "?"}
-
-                  </div>
-
-
-                  <div>
-
-                    <strong>
-                      {trabajador.nombre}
-                    </strong>
-
-                    <span>
-                      {trabajador.cargo ||
-                        "Vigilante"}
-                    </span>
-
-                  </div>
-
-                </div>
-
-
-                {dias.map((fecha) => {
-
-                  const turno =
-                    obtenerTurno(
-                      fecha,
-                      trabajador
-                    );
-
-                  return (
-
-                    <div
-                      className={`shift-cell ${
-                        esHoy(fecha)
-                          ? "today-cell"
-                          : ""
-                      }`}
-                      key={`${trabajador.id}-${obtenerClaveFecha(
-                        fecha
-                      )}`}
-                    >
-
-                      {turno ? (
-
-                        <TurnoCard
-                          tipo={turno}
-                          onClick={
-                            esAdministrador
-                              ? () => {
-
-                                  if (
-                                    onEliminarTurno
-                                  ) {
-
-                                    onEliminarTurno(
-                                      fecha,
-                                      trabajador
-                                    );
-
-                                  }
-
-                                }
-                              : undefined
-                          }
-                        />
-
-                      ) : (
-
-                        esAdministrador ? (
-
-                          <button
-                            type="button"
-                            className="free-cell"
-                            onClick={() => {
-
-                              if (
-                                onSeleccionarTurno
-                              ) {
-
-                                onSeleccionarTurno(
-                                  fecha,
-                                  trabajador
-                                );
-
-                              }
-
-                            }}
-                            title="Asignar turno"
-                          >
-                            +
-                          </button>
-
-                        ) : (
-
-                          <div
-                            className="free-cell free-cell-readonly"
-                            title="Día libre"
-                          >
-                            —
-                          </div>
-
-                        )
-
-                      )}
-
-                    </div>
-
-                  );
-
-                })}
+                <span>
+                  {esAdministrador
+                    ? "Administración"
+                    : "Trabajador"}
+                </span>
 
               </div>
 
-            )
-          )}
+            </div>
 
-        </div>
+            <button
+              type="button"
+              onClick={cerrarSesion}
+              className="btn-logout"
+            >
+              Cerrar sesión
+            </button>
 
-      </div>
+          </div>
 
+        </header>
 
-      <div className="calendar-footer">
+        {cargandoTrabajadores ? (
 
-        <div>
+          <div
+            style={{
+              padding: "40px",
+              textAlign: "center",
+            }}
+          >
+            Cargando trabajadores...
+          </div>
 
-          <strong>
-            {cantidadTurnos}
-          </strong>
+        ) : (
 
-          <span>
-            turnos asignados
-          </span>
+          mostrarPagina()
 
-        </div>
-
-
-        <div>
-
-          <strong>
-            {cantidadDias}
-          </strong>
-
-          <span>
-            turnos de día
-          </span>
-
-        </div>
-
-
-        <div>
-
-          <strong>
-            {cantidadNoches}
-          </strong>
-
-          <span>
-            turnos de noche
-          </span>
-
-        </div>
+        )}
 
       </div>
 
-    </>
+    </div>
   );
 }
 
-export default Calendario;
+export default App;
