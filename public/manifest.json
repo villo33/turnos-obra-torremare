@@ -1,1 +1,23 @@
-
+{
+  "name": "Torre Mare - Turnos",
+  "short_name": "Torre Mare",
+  "description": "Control de turnos de obra Torre Mare",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5f7fa",
+  "theme_color": "#071a3a",
+  "icons": [
+    {
+      "src": "/logo192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
