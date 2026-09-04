@@ -23,14 +23,17 @@ function Calendario({
   });
 
   /* =====================================================
-     DÍAS DE LA SEMANA
+     DÍAS DEL PERÍODO
+     15 DÍAS EXACTOS
   ===================================================== */
 
   const dias = useMemo(() => {
-    return Array.from({ length: 7 }, (_, indice) => {
+    return Array.from({ length: 15 }, (_, indice) => {
       const fecha = new Date(fechaInicio);
 
-      fecha.setDate(fechaInicio.getDate() + indice);
+      fecha.setDate(
+        fechaInicio.getDate() + indice
+      );
 
       return fecha;
     });
@@ -92,15 +95,66 @@ function Calendario({
   };
 
   /* =====================================================
-     CAMBIAR SEMANA
+     INFORMACIÓN DEL PERÍODO
   ===================================================== */
 
-  const cambiarSemana = (cantidad) => {
+  const obtenerTextoPeriodo = () => {
+    const inicio = dias[0];
+    const fin = dias[dias.length - 1];
+
+    const mismoMes =
+      inicio.getMonth() === fin.getMonth() &&
+      inicio.getFullYear() === fin.getFullYear();
+
+    if (mismoMes) {
+      return (
+        <>
+          <strong>
+            {nombreMes(inicio)}
+          </strong>
+
+          <span>
+            {" "}
+            {inicio.getDate()} — {fin.getDate()}
+          </span>
+        </>
+      );
+    }
+
+    return (
+      <>
+        <strong>
+          {nombreMes(inicio)}
+        </strong>
+
+        <span>
+          {" "}
+          {inicio.getDate()} —{" "}
+        </span>
+
+        <strong>
+          {nombreMes(fin)}
+        </strong>
+
+        <span>
+          {" "}
+          {fin.getDate()}
+        </span>
+      </>
+    );
+  };
+
+  /* =====================================================
+     CAMBIAR PERÍODO
+     AVANZA / RETROCEDE 15 DÍAS
+  ===================================================== */
+
+  const cambiarPeriodo = (cantidad) => {
     setFechaInicio((actual) => {
       const nueva = new Date(actual);
 
       nueva.setDate(
-        actual.getDate() + cantidad * 7
+        actual.getDate() + cantidad * 15
       );
 
       return nueva;
@@ -108,7 +162,7 @@ function Calendario({
   };
 
   /* =====================================================
-     IR A LA SEMANA ACTUAL
+     IR AL PERÍODO ACTUAL
   ===================================================== */
 
   const irHoy = () => {
@@ -118,7 +172,8 @@ function Calendario({
 
     const dia = fecha.getDay();
 
-    const diferencia = dia === 0 ? -6 : 1 - dia;
+    const diferencia =
+      dia === 0 ? -6 : 1 - dia;
 
     fecha.setDate(
       fecha.getDate() + diferencia
@@ -132,7 +187,8 @@ function Calendario({
   ===================================================== */
 
   const obtenerTurno = (fecha, trabajador) => {
-    const claveFecha = obtenerClaveFecha(fecha);
+    const claveFecha =
+      obtenerClaveFecha(fecha);
 
     return (
       turnos?.[claveFecha]?.[trabajador.id] ||
@@ -187,7 +243,10 @@ function Calendario({
       return;
     }
 
-    if (typeof onSeleccionarTurno === "function") {
+    if (
+      typeof onSeleccionarTurno ===
+      "function"
+    ) {
       onSeleccionarTurno(
         fecha,
         trabajador
@@ -207,7 +266,10 @@ function Calendario({
       return;
     }
 
-    if (typeof onEliminarTurno === "function") {
+    if (
+      typeof onEliminarTurno ===
+      "function"
+    ) {
       await onEliminarTurno(
         fecha,
         trabajador.id
@@ -277,7 +339,7 @@ function Calendario({
         <div>
 
           <span className="calendario-label">
-            PROGRAMACIÓN SEMANAL
+            PROGRAMACIÓN QUINCENAL
           </span>
 
           <h3>
@@ -307,9 +369,9 @@ function Calendario({
             type="button"
             className="btn-arrow"
             onClick={() =>
-              cambiarSemana(-1)
+              cambiarPeriodo(-1)
             }
-            title="Semana anterior"
+            title="Período anterior"
           >
             ‹
           </button>
@@ -318,9 +380,9 @@ function Calendario({
             type="button"
             className="btn-arrow"
             onClick={() =>
-              cambiarSemana(1)
+              cambiarPeriodo(1)
             }
-            title="Semana siguiente"
+            title="Período siguiente"
           >
             ›
           </button>
@@ -330,22 +392,14 @@ function Calendario({
       </div>
 
       {/* =================================================
-          INFORMACIÓN DE LA SEMANA
+          INFORMACIÓN DEL PERÍODO
       ================================================= */}
 
       <div className="week-info">
 
         <div>
 
-          <strong>
-            {nombreMes(dias[0])}
-          </strong>
-
-          <span>
-            {" "}
-            {dias[0].getDate()} —{" "}
-            {dias[6].getDate()}
-          </span>
+          {obtenerTextoPeriodo()}
 
         </div>
 
