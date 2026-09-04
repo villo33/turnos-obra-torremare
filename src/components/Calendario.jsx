@@ -8,6 +8,12 @@ function Calendario({
   onEliminarTurno,
   puedeEditar = false,
 }) {
+  /* =====================================================
+     FECHA INICIAL
+     COMIENZA EN EL LUNES DE LA SEMANA ACTUAL
+     Y MUESTRA 15 DÍAS
+  ===================================================== */
+
   const [fechaInicio, setFechaInicio] = useState(() => {
     const fecha = new Date();
 
@@ -15,9 +21,12 @@ function Calendario({
 
     const dia = fecha.getDay();
 
-    const diferencia = dia === 0 ? -6 : 1 - dia;
+    const diferencia =
+      dia === 0 ? -6 : 1 - dia;
 
-    fecha.setDate(fecha.getDate() + diferencia);
+    fecha.setDate(
+      fecha.getDate() + diferencia
+    );
 
     return fecha;
   });
@@ -28,15 +37,20 @@ function Calendario({
   ===================================================== */
 
   const dias = useMemo(() => {
-    return Array.from({ length: 15 }, (_, indice) => {
-      const fecha = new Date(fechaInicio);
+    return Array.from(
+      { length: 15 },
+      (_, indice) => {
+        const fecha = new Date(fechaInicio);
 
-      fecha.setDate(
-        fechaInicio.getDate() + indice
-      );
+        fecha.setDate(
+          fechaInicio.getDate() + indice
+        );
 
-      return fecha;
-    });
+        fecha.setHours(0, 0, 0, 0);
+
+        return fecha;
+      }
+    );
   }, [fechaInicio]);
 
   /* =====================================================
@@ -65,9 +79,12 @@ function Calendario({
     const hoy = new Date();
 
     return (
-      hoy.getFullYear() === fecha.getFullYear() &&
-      hoy.getMonth() === fecha.getMonth() &&
-      hoy.getDate() === fecha.getDate()
+      hoy.getFullYear() ===
+        fecha.getFullYear() &&
+      hoy.getMonth() ===
+        fecha.getMonth() &&
+      hoy.getDate() ===
+        fecha.getDate()
     );
   };
 
@@ -89,9 +106,12 @@ function Calendario({
   ===================================================== */
 
   const nombreMes = (fecha) => {
-    return fecha.toLocaleDateString("es-CO", {
-      month: "long",
-    });
+    return fecha.toLocaleDateString(
+      "es-CO",
+      {
+        month: "long",
+      }
+    );
   };
 
   /* =====================================================
@@ -103,8 +123,10 @@ function Calendario({
     const fin = dias[dias.length - 1];
 
     const mismoMes =
-      inicio.getMonth() === fin.getMonth() &&
-      inicio.getFullYear() === fin.getFullYear();
+      inicio.getMonth() ===
+        fin.getMonth() &&
+      inicio.getFullYear() ===
+        fin.getFullYear();
 
     if (mismoMes) {
       return (
@@ -115,8 +137,14 @@ function Calendario({
 
           <span>
             {" "}
-            {inicio.getDate()} — {fin.getDate()}
+            {inicio.getDate()} —{" "}
+            {fin.getDate()}
           </span>
+
+          <small>
+            {" "}
+            {fin.getFullYear()}
+          </small>
         </>
       );
     }
@@ -140,6 +168,11 @@ function Calendario({
           {" "}
           {fin.getDate()}
         </span>
+
+        <small>
+          {" "}
+          {fin.getFullYear()}
+        </small>
       </>
     );
   };
@@ -154,7 +187,8 @@ function Calendario({
       const nueva = new Date(actual);
 
       nueva.setDate(
-        actual.getDate() + cantidad * 15
+        actual.getDate() +
+          cantidad * 15
       );
 
       return nueva;
@@ -186,50 +220,72 @@ function Calendario({
      OBTENER TURNO
   ===================================================== */
 
-  const obtenerTurno = (fecha, trabajador) => {
+  const obtenerTurno = (
+    fecha,
+    trabajador
+  ) => {
     const claveFecha =
       obtenerClaveFecha(fecha);
 
     return (
-      turnos?.[claveFecha]?.[trabajador.id] ||
-      null
+      turnos?.[claveFecha]?.[
+        trabajador.id
+      ] || null
     );
   };
 
   /* =====================================================
-     CONTADORES
+     RESUMEN DEL PERÍODO
+     
+     IMPORTANTE:
+     SOLO CUENTA LOS TURNOS DE LOS
+     15 DÍAS QUE SE ESTÁN MOSTRANDO.
   ===================================================== */
 
-  const cantidadTurnos = Object.values(
-    turnos || {}
-  ).reduce(
-    (total, dia) =>
-      total +
-      Object.keys(dia || {}).length,
-    0
-  );
+  const resumenPeriodo = useMemo(() => {
+    let total = 0;
+    let diasTurno = 0;
+    let nochesTurno = 0;
+    let libres = 0;
 
-  const cantidadDias = Object.values(
-    turnos || {}
-  ).reduce(
-    (total, dia) =>
-      total +
-      Object.values(dia || {}).filter(
-        (turno) => turno === "dia"
-      ).length,
-    0
-  );
+    dias.forEach((fecha) => {
+      const clave =
+        obtenerClaveFecha(fecha);
 
-  const cantidadNoches = Object.values(
-    turnos || {}
-  ).reduce(
-    (total, dia) =>
-      total +
-      Object.values(dia || {}).filter(
-        (turno) => turno === "noche"
-      ).length,
-    0
-  );
+      const turnosDelDia =
+        turnos?.[clave] || {};
+
+      trabajadores.forEach(
+        (trabajador) => {
+          const turno =
+            turnosDelDia?.[
+              trabajador.id
+            ];
+
+          if (turno === "dia") {
+            total++;
+            diasTurno++;
+          } else if (turno === "noche") {
+            total++;
+            nochesTurno++;
+          } else {
+            libres++;
+          }
+        }
+      );
+    });
+
+    return {
+      total,
+      dias: diasTurno,
+      noches: nochesTurno,
+      libres,
+    };
+  }, [
+    dias,
+    trabajadores,
+    turnos,
+  ]);
 
   /* =====================================================
      SELECCIONAR CELDA LIBRE
@@ -306,13 +362,14 @@ function Calendario({
         }
       );
 
-    const confirmar = window.confirm(
-      `¿Quieres eliminar este turno?\n\n` +
-      `Trabajador: ${trabajador.nombre}\n` +
-      `Fecha: ${fechaTexto}\n` +
-      `Turno: ${nombreTurno}\n\n` +
-      `Esta acción eliminará el turno de la programación.`
-    );
+    const confirmar =
+      window.confirm(
+        `¿Quieres eliminar este turno?\n\n` +
+          `Trabajador: ${trabajador.nombre}\n` +
+          `Fecha: ${fechaTexto}\n` +
+          `Turno: ${nombreTurno}\n\n` +
+          `Esta acción eliminará el turno de la programación.`
+      );
 
     if (!confirmar) {
       return;
@@ -372,6 +429,7 @@ function Calendario({
               cambiarPeriodo(-1)
             }
             title="Período anterior"
+            aria-label="Período anterior"
           >
             ‹
           </button>
@@ -383,6 +441,7 @@ function Calendario({
               cambiarPeriodo(1)
             }
             title="Período siguiente"
+            aria-label="Período siguiente"
           >
             ›
           </button>
@@ -391,6 +450,7 @@ function Calendario({
 
       </div>
 
+
       {/* =================================================
           INFORMACIÓN DEL PERÍODO
       ================================================= */}
@@ -398,6 +458,17 @@ function Calendario({
       <div className="week-info">
 
         <div>
+
+          <span
+            style={{
+              marginRight: "8px",
+              fontSize: "12px",
+              fontWeight: "600",
+              opacity: 0.7,
+            }}
+          >
+            PERÍODO DE 15 DÍAS:
+          </span>
 
           {obtenerTextoPeriodo()}
 
@@ -424,6 +495,7 @@ function Calendario({
 
       </div>
 
+
       {/* =================================================
           CALENDARIO
       ================================================= */}
@@ -432,17 +504,18 @@ function Calendario({
 
         <div className="calendar-grid">
 
-          {/* =============================================
+          {/* =================================================
               ESQUINA
-          ============================================= */}
+          ================================================= */}
 
           <div className="corner-cell">
             PERSONAL / DÍAS
           </div>
 
-          {/* =============================================
-              ENCABEZADOS DE LOS DÍAS
-          ============================================= */}
+
+          {/* =================================================
+              ENCABEZADOS DE LOS 15 DÍAS
+          ================================================= */}
 
           {dias.map((fecha) => (
 
@@ -452,7 +525,9 @@ function Calendario({
                   ? "today"
                   : ""
               }`}
-              key={obtenerClaveFecha(fecha)}
+              key={obtenerClaveFecha(
+                fecha
+              )}
             >
 
               <span>
@@ -473,9 +548,10 @@ function Calendario({
 
           ))}
 
-          {/* =============================================
-              TRABAJADORES
-          ============================================= */}
+
+          {/* =================================================
+              FILAS DE TRABAJADORES
+          ================================================= */}
 
           {trabajadores.map(
             (trabajador) => (
@@ -485,9 +561,9 @@ function Calendario({
                 key={trabajador.id}
               >
 
-                {/* =======================================
+                {/* =========================================
                     INFORMACIÓN DEL TRABAJADOR
-                ======================================= */}
+                ========================================= */}
 
                 <div className="worker-name">
 
@@ -516,9 +592,10 @@ function Calendario({
 
                 </div>
 
-                {/* =======================================
-                    DÍAS
-                ======================================= */}
+
+                {/* =========================================
+                    15 DÍAS
+                ========================================= */}
 
                 {dias.map((fecha) => {
 
@@ -544,11 +621,11 @@ function Calendario({
                       key={clave}
                     >
 
-                      {/* =================================
-                          TURNO ASIGNADO
-                      ================================= */}
-
                       {turno ? (
+
+                        /* =================================
+                            TURNO ASIGNADO
+                        ================================= */
 
                         <TurnoCard
                           tipo={turno}
@@ -563,9 +640,9 @@ function Calendario({
 
                       ) : (
 
-                        /* ===============================
-                           CELDA LIBRE
-                        =============================== */
+                        /* =================================
+                            CELDA LIBRE
+                        ================================= */
 
                         <button
                           type="button"
@@ -607,45 +684,157 @@ function Calendario({
 
       </div>
 
+
       {/* =================================================
-          RESUMEN
+          RESUMEN DEL PERÍODO
       ================================================= */}
 
-      <div className="calendar-footer">
+      <div className="calendar-summary">
 
-        <div>
+        <div className="calendar-summary-header">
 
-          <strong>
-            {cantidadTurnos}
-          </strong>
+          <div>
 
-          <span>
-            turnos asignados
-          </span>
+            <span className="calendario-label">
+              RESUMEN DEL PERÍODO
+            </span>
+
+            <h3>
+              Distribución de turnos
+            </h3>
+
+            <p>
+              Información correspondiente
+              a los 15 días mostrados.
+            </p>
+
+          </div>
+
+          <div className="summary-period">
+
+            <strong>
+              15
+            </strong>
+
+            <span>
+              días
+            </span>
+
+          </div>
 
         </div>
 
-        <div>
 
-          <strong>
-            {cantidadDias}
-          </strong>
+        {/* =================================================
+            ESTADÍSTICAS
+        ================================================= */}
 
-          <span>
-            turnos de día
-          </span>
+        <div className="calendar-footer">
+
+          {/* TOTAL */}
+
+          <div>
+
+            <strong>
+              {resumenPeriodo.total}
+            </strong>
+
+            <span>
+              turnos asignados
+            </span>
+
+          </div>
+
+
+          {/* DÍA */}
+
+          <div>
+
+            <strong>
+              {resumenPeriodo.dias}
+            </strong>
+
+            <span>
+              turnos de día
+            </span>
+
+          </div>
+
+
+          {/* NOCHE */}
+
+          <div>
+
+            <strong>
+              {resumenPeriodo.noches}
+            </strong>
+
+            <span>
+              turnos de noche
+            </span>
+
+          </div>
+
+
+          {/* LIBRES */}
+
+          <div>
+
+            <strong>
+              {resumenPeriodo.libres}
+            </strong>
+
+            <span>
+              días libres
+            </span>
+
+          </div>
 
         </div>
 
-        <div>
 
-          <strong>
-            {cantidadNoches}
-          </strong>
+        {/* =================================================
+            INFORMACIÓN DEL PERSONAL
+        ================================================= */}
 
-          <span>
-            turnos de noche
-          </span>
+        <div className="personal-periodo">
+
+          <div>
+
+            <strong>
+              {trabajadores.length}
+            </strong>
+
+            <span>
+              personal registrado
+            </span>
+
+          </div>
+
+          <div>
+
+            <strong>
+              {trabajadores.length *
+                dias.length}
+            </strong>
+
+            <span>
+              jornadas disponibles
+            </span>
+
+          </div>
+
+          <div>
+
+            <strong>
+              {resumenPeriodo.total}
+            </strong>
+
+            <span>
+              jornadas programadas
+            </span>
+
+          </div>
 
         </div>
 
