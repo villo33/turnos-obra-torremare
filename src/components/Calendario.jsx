@@ -223,10 +223,7 @@ function Calendario({
 
   /* =====================================================
      RESUMEN REAL DE LOS 15 DÍAS
-     
-     SOLO SE ANALIZAN LAS FECHAS VISIBLES
-     EN EL CALENDARIO.
-  ===================================================== */
+     ===================================================== */
 
   const resumenPeriodo = useMemo(() => {
     let total = 0;
@@ -275,10 +272,7 @@ function Calendario({
 
   /* =====================================================
      INFORMACIÓN POR TRABAJADOR
-     
-     AQUÍ SE CALCULAN LOS DATOS QUE APARECEN
-     EN "PERSONAL EN ESTE PERÍODO".
-  ===================================================== */
+     ===================================================== */
 
   const resumenPersonal = useMemo(() => {
     return trabajadores.map(
@@ -542,14 +536,10 @@ function Calendario({
 
         <div className="calendar-grid">
 
-          {/* ESQUINA */}
-
           <div className="corner-cell">
             PERSONAL / DÍAS
           </div>
 
-
-          {/* 15 DÍAS */}
 
           {dias.map((fecha) => (
 
@@ -583,8 +573,6 @@ function Calendario({
           ))}
 
 
-          {/* TRABAJADORES */}
-
           {trabajadores.map(
             (trabajador) => (
 
@@ -592,8 +580,6 @@ function Calendario({
                 className="worker-row"
                 key={trabajador.id}
               >
-
-                {/* INFORMACIÓN */}
 
                 <div className="worker-name">
 
@@ -622,8 +608,6 @@ function Calendario({
 
                 </div>
 
-
-                {/* DÍAS */}
 
                 {dias.map((fecha) => {
 
@@ -797,9 +781,6 @@ function Calendario({
 
       {/* =================================================
           PERSONAL EN EL PERÍODO
-          
-          ESTA ES LA PARTE QUE REEMPLAZA
-          "PERSONAL ESTA SEMANA".
       ================================================= */}
 
       <section
@@ -831,6 +812,7 @@ function Calendario({
           <span className="online-status">
 
             {trabajadores.length}{" "}
+
             {trabajadores.length === 1
               ? "trabajador"
               : "trabajadores"}
@@ -840,17 +822,15 @@ function Calendario({
         </div>
 
 
-        {/* =================================================
-            LISTA DEL PERSONAL
-        ================================================= */}
-
         <div className="personal-periodo-list">
 
           {resumenPersonal.length === 0 ? (
 
             <div className="resumen-vacio">
+
               No hay trabajadores
               registrados.
+
             </div>
 
           ) : (
@@ -868,10 +848,6 @@ function Calendario({
                   className="personal-periodo-row"
                   key={trabajador.id}
                 >
-
-                  {/* ================================
-                      TRABAJADOR
-                  ================================= */}
 
                   <div className="personal-periodo-person">
 
@@ -901,10 +877,6 @@ function Calendario({
                   </div>
 
 
-                  {/* ================================
-                      TOTAL
-                  ================================= */}
-
                   <div className="personal-periodo-stat">
 
                     <strong>
@@ -917,10 +889,6 @@ function Calendario({
 
                   </div>
 
-
-                  {/* ================================
-                      DÍA
-                  ================================= */}
 
                   <div className="personal-periodo-stat">
 
@@ -935,10 +903,6 @@ function Calendario({
                   </div>
 
 
-                  {/* ================================
-                      NOCHE
-                  ================================= */}
-
                   <div className="personal-periodo-stat">
 
                     <strong>
@@ -946,4 +910,37 @@ function Calendario({
                     </strong>
 
                     <span>
-         
+                      noche
+                    </span>
+
+                  </div>
+
+
+                  <div className="personal-periodo-stat">
+
+                    <strong>
+                      {libre}
+                    </strong>
+
+                    <span>
+                      libres
+                    </span>
+
+                  </div>
+
+                </div>
+
+              )
+            )
+
+          )}
+
+        </div>
+
+      </section>
+
+    </>
+  );
+}
+
+export default Calendario;
