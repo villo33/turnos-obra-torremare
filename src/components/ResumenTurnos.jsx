@@ -1,6 +1,7 @@
 function ResumenTurnos({
   trabajadores = [],
   turnos = {},
+  fechaInicio,
 }) {
   const obtenerClaveFecha = (fecha) => {
     const year = fecha.getFullYear();
@@ -16,53 +17,81 @@ function ResumenTurnos({
     return `${year}-${month}-${day}`;
   };
 
-  const hoy = new Date();
-
-  hoy.setHours(0, 0, 0, 0);
-
-  const diaSemana = hoy.getDay();
-
-  const diferencia =
-    diaSemana === 0
-      ? -6
-      : 1 - diaSemana;
-
-  const lunes = new Date(hoy);
-
-  lunes.setDate(
-    hoy.getDate() + diferencia
-  );
-
-  const diasSemana = Array.from(
-    { length: 7 },
+  const dias = Array.from(
+    { length: 15 },
     (_, indice) => {
-      const fecha = new Date(lunes);
+      const fecha = new Date(
+        fechaInicio
+      );
 
       fecha.setDate(
-        lunes.getDate() + indice
+        fechaInicio.getDate() + indice
       );
+
+      fecha.setHours(0, 0, 0, 0);
 
       return fecha;
     }
   );
 
-  const nombresDias = [
-    "Lun",
-    "Mar",
-    "Mié",
-    "Jue",
-    "Vie",
-    "Sáb",
-    "Dom",
-  ];
+  const esHoy = (fecha) => {
+    const hoy = new Date();
+
+    hoy.setHours(0, 0, 0, 0);
+
+    return (
+      hoy.getFullYear() ===
+        fecha.getFullYear() &&
+      hoy.getMonth() ===
+        fecha.getMonth() &&
+      hoy.getDate() ===
+        fecha.getDate()
+    );
+  };
+
+  const nombreDia = (fecha) => {
+    return fecha
+      .toLocaleDateString(
+        "es-CO",
+        {
+          weekday: "short",
+        }
+      )
+      .replace(".", "")
+      .toUpperCase();
+  };
+
+  const esTurnoDia = (turno) => {
+    if (!turno) return false;
+
+    const valor = String(turno)
+      .trim()
+      .toLowerCase();
+
+    return (
+      valor === "dia" ||
+      valor === "día"
+    );
+  };
+
+  const esTurnoNoche = (turno) => {
+    if (!turno) return false;
+
+    const valor = String(turno)
+      .trim()
+      .toLowerCase();
+
+    return valor === "noche";
+  };
 
   const obtenerTurnosTrabajador = (
     trabajador
   ) => {
-    let dias = 0;
+    let diasTurno = 0;
     let noches = 0;
 
-    diasSemana.forEach((fecha) => {
+    dias.forEach((fecha) => {
+
       const clave =
         obtenerClaveFecha(fecha);
 
@@ -71,48 +100,60 @@ function ResumenTurnos({
           trabajador.id
         ];
 
-      if (turno === "dia") {
-        dias++;
+      if (esTurnoDia(turno)) {
+        diasTurno++;
       }
 
-      if (turno === "noche") {
+      if (esTurnoNoche(turno)) {
         noches++;
       }
+
     });
 
     return {
-      dias,
+      dias: diasTurno,
       noches,
-      total: dias + noches,
+      total:
+        diasTurno + noches,
     };
   };
 
-  const totalDia = trabajadores.reduce(
-    (total, trabajador) => {
-      return (
-        total +
-        obtenerTurnosTrabajador(
-          trabajador
-        ).dias
-      );
-    },
-    0
-  );
+  const totalDia =
+    trabajadores.reduce(
+      (total, trabajador) => {
+        return (
+          total +
+          obtenerTurnosTrabajador(
+            trabajador
+          ).dias
+        );
+      },
+      0
+    );
 
-  const totalNoche = trabajadores.reduce(
-    (total, trabajador) => {
-      return (
-        total +
-        obtenerTurnosTrabajador(
-          trabajador
-        ).noches
-      );
-    },
-    0
-  );
+  const totalNoche =
+    trabajadores.reduce(
+      (total, trabajador) => {
+        return (
+          total +
+          obtenerTurnosTrabajador(
+            trabajador
+          ).noches
+        );
+      },
+      0
+    );
 
   const totalTurnos =
     totalDia + totalNoche;
+
+  const personalConTurnos =
+    trabajadores.filter(
+      (trabajador) =>
+        obtenerTurnosTrabajador(
+          trabajador
+        ).total > 0
+    ).length;
 
   return (
     <section className="resumen-turnos">
@@ -130,6 +171,7 @@ function ResumenTurnos({
         </div>
 
         <div className="resumen-total">
+
           <strong>
             {totalTurnos}
           </strong>
@@ -137,6 +179,7 @@ function ResumenTurnos({
           <small>
             turnos
           </small>
+
         </div>
 
       </div>
@@ -151,6 +194,7 @@ function ResumenTurnos({
           </div>
 
           <div>
+
             <span>
               Turnos de día
             </span>
@@ -158,6 +202,7 @@ function ResumenTurnos({
             <strong>
               {totalDia}
             </strong>
+
           </div>
 
         </div>
@@ -170,6 +215,7 @@ function ResumenTurnos({
           </div>
 
           <div>
+
             <span>
               Turnos de noche
             </span>
@@ -177,6 +223,7 @@ function ResumenTurnos({
             <strong>
               {totalNoche}
             </strong>
+
           </div>
 
         </div>
@@ -189,13 +236,15 @@ function ResumenTurnos({
           </div>
 
           <div>
+
             <span>
               Personal
             </span>
 
             <strong>
-              {trabajadores.length}
+              {personalConTurnos}
             </strong>
+
           </div>
 
         </div>
@@ -226,86 +275,96 @@ function ResumenTurnos({
 
         ) : (
 
-          trabajadores.map((trabajador) => {
+          trabajadores.map(
+            (trabajador) => {
 
-            const datos =
-              obtenerTurnosTrabajador(
-                trabajador
+              const datos =
+                obtenerTurnosTrabajador(
+                  trabajador
+                );
+
+              const inicial =
+                trabajador.nombre
+                  ?.trim()
+                  ?.charAt(0)
+                  ?.toUpperCase() ||
+                "?";
+
+              return (
+                <div
+                  className="resumen-persona"
+                  key={trabajador.id}
+                >
+
+                  <div className="resumen-persona-info">
+
+                    <div className="resumen-avatar">
+                      {inicial}
+                    </div>
+
+                    <div>
+
+                      <strong>
+                        {trabajador.nombre}
+                      </strong>
+
+                      <span>
+                        {trabajador.cargo ||
+                          "Vigilante"}
+                      </span>
+
+                    </div>
+
+                  </div>
+
+
+                  <div className="resumen-persona-turnos">
+
+                    <div className="mini-turno dia">
+
+                      <strong>
+                        {datos.dias}
+                      </strong>
+
+                      <span>
+                        día
+                      </span>
+
+                    </div>
+
+
+                    <div className="mini-turno noche">
+
+                      <strong>
+                        {datos.noches}
+                      </strong>
+
+                      <span>
+                        noche
+                      </span>
+
+                    </div>
+
+
+                    <div className="mini-total">
+
+                      <strong>
+                        {datos.total}
+                      </strong>
+
+                      <span>
+                        total
+                      </span>
+
+                    </div>
+
+                  </div>
+
+                </div>
               );
+            }
+          )
 
-            const inicial =
-              trabajador.nombre
-                ?.trim()
-                ?.charAt(0)
-                ?.toUpperCase() || "?";
-
-            return (
-              <div
-                className="resumen-persona"
-                key={trabajador.id}
-              >
-
-                <div className="resumen-persona-info">
-
-                  <div className="resumen-avatar">
-                    {inicial}
-                  </div>
-
-                  <div>
-
-                    <strong>
-                      {trabajador.nombre}
-                    </strong>
-
-                    <span>
-                      {trabajador.cargo ||
-                        "Vigilante"}
-                    </span>
-
-                  </div>
-
-                </div>
-
-
-                <div className="resumen-persona-turnos">
-
-                  <div className="mini-turno dia">
-                    <strong>
-                      {datos.dias}
-                    </strong>
-
-                    <span>
-                      día
-                    </span>
-                  </div>
-
-
-                  <div className="mini-turno noche">
-                    <strong>
-                      {datos.noches}
-                    </strong>
-
-                    <span>
-                      noche
-                    </span>
-                  </div>
-
-
-                  <div className="mini-total">
-                    <strong>
-                      {datos.total}
-                    </strong>
-
-                    <span>
-                      total
-                    </span>
-                  </div>
-
-                </div>
-
-              </div>
-            );
-          })
         )}
 
       </div>
@@ -313,34 +372,46 @@ function ResumenTurnos({
 
       <div className="resumen-dias">
 
-        {diasSemana.map(
-          (fecha, indice) => {
+        {dias.map(
+          (fecha) => {
 
             const clave =
-              obtenerClaveFecha(fecha);
+              obtenerClaveFecha(
+                fecha
+              );
 
             let cantidad = 0;
 
             trabajadores.forEach(
               (trabajador) => {
-                if (
+
+                const turno =
                   turnos?.[clave]?.[
                     trabajador.id
-                  ]
+                  ];
+
+                if (
+                  esTurnoDia(turno) ||
+                  esTurnoNoche(turno)
                 ) {
                   cantidad++;
                 }
+
               }
             );
 
             return (
               <div
-                className="resumen-dia"
+                className={`resumen-dia ${
+                  esHoy(fecha)
+                    ? "actual"
+                    : ""
+                }`}
                 key={clave}
               >
 
                 <span>
-                  {nombresDias[indice]}
+                  {nombreDia(fecha)}
                 </span>
 
                 <strong>
