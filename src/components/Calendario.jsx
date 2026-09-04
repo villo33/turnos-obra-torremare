@@ -922,4 +922,4 @@ function Calendario({
                   <div className="calendar-day-summary-date">
 
                     <span>
-                      {nombreDia
+                      {nombreDia(fecha)}
