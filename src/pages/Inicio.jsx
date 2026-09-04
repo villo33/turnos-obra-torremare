@@ -5,9 +5,17 @@ function Inicio({
   turnos = {},
   onIrCalendario,
 }) {
+  /* =====================================================
+     FECHA ACTUAL
+  ===================================================== */
+
   const hoy = new Date();
 
   hoy.setHours(0, 0, 0, 0);
+
+  /* =====================================================
+     CONVERTIR FECHA A YYYY-MM-DD
+  ===================================================== */
 
   const obtenerClaveFecha = (fecha) => {
     const year = fecha.getFullYear();
@@ -23,6 +31,10 @@ function Inicio({
     return `${year}-${month}-${day}`;
   };
 
+  /* =====================================================
+     FORMATEAR FECHA
+  ===================================================== */
+
   const formatearFecha = (fecha) => {
     return fecha.toLocaleDateString(
       "es-CO",
@@ -34,6 +46,10 @@ function Inicio({
     );
   };
 
+  /* =====================================================
+     INICIAL DEL TRABAJADOR
+  ===================================================== */
+
   const obtenerInicial = (nombre) => {
     return (
       nombre
@@ -43,8 +59,89 @@ function Inicio({
     );
   };
 
+  /* =====================================================
+     PERÍODO DE 15 DÍAS
+     
+     El dashboard trabaja con:
+     HOY + 14 DÍAS
+  ===================================================== */
+
+  const diasPeriodo = useMemo(() => {
+    return Array.from(
+      { length: 15 },
+      (_, indice) => {
+        const fecha = new Date(hoy);
+
+        fecha.setDate(
+          hoy.getDate() + indice
+        );
+
+        fecha.setHours(0, 0, 0, 0);
+
+        return fecha;
+      }
+    );
+  }, []);
+
+  /* =====================================================
+     FECHA FINAL DEL PERÍODO
+  ===================================================== */
+
+  const fechaFinalPeriodo =
+    diasPeriodo[diasPeriodo.length - 1];
+
+  /* =====================================================
+     TEXTO DEL PERÍODO
+  ===================================================== */
+
+  const textoPeriodo = useMemo(() => {
+    const inicio = diasPeriodo[0];
+    const fin = diasPeriodo[
+      diasPeriodo.length - 1
+    ];
+
+    const mismoMes =
+      inicio.getMonth() ===
+        fin.getMonth() &&
+      inicio.getFullYear() ===
+        fin.getFullYear();
+
+    if (mismoMes) {
+      return `${inicio.getDate()} — ${fin.getDate()} ${fin
+        .toLocaleDateString("es-CO", {
+          month: "long",
+          year: "numeric",
+        })
+        .replace(/^\w/, (letra) =>
+          letra.toUpperCase()
+        )}`;
+    }
+
+    return `${inicio
+      .toLocaleDateString("es-CO", {
+        day: "numeric",
+        month: "long",
+      })
+      .replace(/^\w/, (letra) =>
+        letra.toUpperCase()
+      )} — ${fin
+      .toLocaleDateString("es-CO", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
+      .replace(/^\w/, (letra) =>
+        letra.toUpperCase()
+      )}`;
+  }, [diasPeriodo]);
+
+  /* =====================================================
+     TURNOS DE HOY
+  ===================================================== */
+
   const turnoHoy = useMemo(() => {
-    const clave = obtenerClaveFecha(hoy);
+    const clave =
+      obtenerClaveFecha(hoy);
 
     const resultado = [];
 
@@ -67,15 +164,74 @@ function Inicio({
     return resultado;
   }, [trabajadores, turnos]);
 
+  /* =====================================================
+     TURNOS DEL PERÍODO DE 15 DÍAS
+     
+     IMPORTANTE:
+     Solo cuenta los turnos que aparecen
+     dentro de estos 15 días.
+  ===================================================== */
+
+  const resumenPeriodo = useMemo(() => {
+    let total = 0;
+    let dia = 0;
+    let noche = 0;
+
+    diasPeriodo.forEach((fecha) => {
+      const clave =
+        obtenerClaveFecha(fecha);
+
+      const turnosDelDia =
+        turnos?.[clave] || {};
+
+      trabajadores.forEach(
+        (trabajador) => {
+          const turno =
+            turnosDelDia?.[
+              trabajador.id
+            ];
+
+          if (turno === "dia") {
+            total++;
+            dia++;
+          }
+
+          if (turno === "noche") {
+            total++;
+            noche++;
+          }
+        }
+      );
+    });
+
+    return {
+      total,
+      dia,
+      noche,
+    };
+  }, [
+    diasPeriodo,
+    trabajadores,
+    turnos,
+  ]);
+
+  /* =====================================================
+     PRÓXIMOS TURNOS
+     
+     Desde mañana hasta completar
+     los 15 días del período.
+  ===================================================== */
+
   const proximosTurnos = useMemo(() => {
     const resultado = [];
 
-    for (let i = 1; i <= 14; i++) {
-      const fecha = new Date(hoy);
-
-      fecha.setDate(
-        hoy.getDate() + i
-      );
+    for (
+      let i = 1;
+      i < diasPeriodo.length;
+      i++
+    ) {
+      const fecha =
+        diasPeriodo[i];
 
       const clave =
         obtenerClaveFecha(fecha);
@@ -89,7 +245,7 @@ function Inicio({
 
           if (turno) {
             resultado.push({
-              fecha,
+              fecha: new Date(fecha),
               trabajador,
               turno,
             });
@@ -99,45 +255,66 @@ function Inicio({
     }
 
     return resultado.slice(0, 6);
-  }, [trabajadores, turnos]);
+  }, [
+    diasPeriodo,
+    trabajadores,
+    turnos,
+  ]);
 
-  const totalTurnos = Object.values(
-    turnos
-  ).reduce((total, dia) => {
-    return (
-      total +
-      Object.keys(dia || {}).length
-    );
-  }, 0);
+  /* =====================================================
+     CANTIDAD DE DÍAS LIBRES DEL PERÍODO
+     
+     Un día libre = trabajador sin turno
+     en una de las 15 fechas.
+  ===================================================== */
 
-  const turnosDia = Object.values(
-    turnos
-  ).reduce((total, dia) => {
-    return (
-      total +
-      Object.values(dia || {}).filter(
-        (turno) => turno === "dia"
-      ).length
-    );
-  }, 0);
+  const diasLibresPeriodo =
+    useMemo(() => {
+      let libres = 0;
 
-  const turnosNoche = Object.values(
-    turnos
-  ).reduce((total, dia) => {
-    return (
-      total +
-      Object.values(dia || {}).filter(
-        (turno) => turno === "noche"
-      ).length
-    );
-  }, 0);
+      diasPeriodo.forEach((fecha) => {
+        const clave =
+          obtenerClaveFecha(fecha);
+
+        const turnosDelDia =
+          turnos?.[clave] || {};
+
+        trabajadores.forEach(
+          (trabajador) => {
+            const turno =
+              turnosDelDia?.[
+                trabajador.id
+              ];
+
+            if (!turno) {
+              libres++;
+            }
+          }
+        );
+      });
+
+      return libres;
+    }, [
+      diasPeriodo,
+      trabajadores,
+      turnos,
+    ]);
+
+  /* =====================================================
+     RENDER
+  ===================================================== */
 
   return (
     <main className="dashboard">
 
+      {/* =================================================
+          ENCABEZADO
+      ================================================= */}
+
       <section className="welcome">
 
         <div>
+
           <span className="eyebrow">
             CONTROL DE TURNOS
           </span>
@@ -150,29 +327,53 @@ function Inicio({
             Consulta y organiza los turnos
             del equipo de vigilancia.
           </p>
+
+          <small
+            style={{
+              display: "block",
+              marginTop: "6px",
+              opacity: 0.7,
+            }}
+          >
+            Período: {textoPeriodo}
+          </small>
+
         </div>
 
         <div className="today-badge">
-          <span>HOY</span>
+
+          <span>
+            HOY
+          </span>
 
           <strong>
             {hoy.getDate()}
           </strong>
 
           <small>
-            {hoy.toLocaleDateString(
-              "es-CO",
-              {
-                month: "short",
-              }
-            ).replace(".", "").toUpperCase()}
+            {hoy
+              .toLocaleDateString(
+                "es-CO",
+                {
+                  month: "short",
+                }
+              )
+              .replace(".", "")
+              .toUpperCase()}
           </small>
+
         </div>
 
       </section>
 
 
+      {/* =================================================
+          ESTADÍSTICAS
+      ================================================= */}
+
       <section className="stats-grid">
+
+        {/* TRABAJADORES */}
 
         <div className="stat-card">
 
@@ -181,6 +382,7 @@ function Inicio({
           </div>
 
           <div>
+
             <span>
               TRABAJADORES
             </span>
@@ -192,10 +394,13 @@ function Inicio({
             <small>
               Personal registrado
             </small>
+
           </div>
 
         </div>
 
+
+        {/* TURNOS */}
 
         <div className="stat-card">
 
@@ -204,21 +409,25 @@ function Inicio({
           </div>
 
           <div>
+
             <span>
               TURNOS
             </span>
 
             <strong>
-              {totalTurnos}
+              {resumenPeriodo.total}
             </strong>
 
             <small>
-              Turnos programados
+              Programados en 15 días
             </small>
+
           </div>
 
         </div>
 
+
+        {/* DÍA */}
 
         <div className="stat-card">
 
@@ -227,21 +436,25 @@ function Inicio({
           </div>
 
           <div>
+
             <span>
               DÍA
             </span>
 
             <strong>
-              {turnosDia}
+              {resumenPeriodo.dia}
             </strong>
 
             <small>
               Turnos diurnos
             </small>
+
           </div>
 
         </div>
 
+
+        {/* NOCHE */}
 
         <div className="stat-card">
 
@@ -250,17 +463,19 @@ function Inicio({
           </div>
 
           <div>
+
             <span>
               NOCHE
             </span>
 
             <strong>
-              {turnosNoche}
+              {resumenPeriodo.noche}
             </strong>
 
             <small>
               Turnos nocturnos
             </small>
+
           </div>
 
         </div>
@@ -268,13 +483,22 @@ function Inicio({
       </section>
 
 
+      {/* =================================================
+          CONTENIDO PRINCIPAL
+      ================================================= */}
+
       <section className="content-grid">
+
+        {/* =================================================
+            TURNOS DE HOY
+        ================================================= */}
 
         <div className="panel">
 
           <div className="panel-header">
 
             <div>
+
               <span className="panel-label">
                 HOY
               </span>
@@ -282,6 +506,7 @@ function Inicio({
               <h3>
                 Turnos de hoy
               </h3>
+
             </div>
 
             <button
@@ -300,6 +525,7 @@ function Inicio({
             {turnoHoy.length === 0 ? (
 
               <div className="empty-section">
+
                 <div className="empty-icon">
                   📅
                 </div>
@@ -312,6 +538,7 @@ function Inicio({
                   No hay trabajadores
                   asignados para esta fecha.
                 </p>
+
               </div>
 
             ) : (
@@ -328,6 +555,7 @@ function Inicio({
                   >
 
                     <div className="date-box">
+
                       <strong>
                         {hoy.getDate()}
                       </strong>
@@ -335,13 +563,16 @@ function Inicio({
                       <span>
                         HOY
                       </span>
+
                     </div>
 
 
                     <div className="shift-icon">
+
                       {turno === "dia"
                         ? "☀"
                         : "☾"}
+
                     </div>
 
 
@@ -367,14 +598,18 @@ function Inicio({
                           : "noche"
                       }`}
                     >
+
                       {turno === "dia"
                         ? "DÍA"
                         : "NOCHE"}
+
                     </span>
 
                   </div>
+
                 )
               )
+
             )}
 
           </div>
@@ -382,11 +617,16 @@ function Inicio({
         </div>
 
 
+        {/* =================================================
+            PERSONAL REGISTRADO
+        ================================================= */}
+
         <div className="panel">
 
           <div className="panel-header">
 
             <div>
+
               <span className="panel-label">
                 EQUIPO
               </span>
@@ -394,11 +634,15 @@ function Inicio({
               <h3>
                 Personal registrado
               </h3>
+
             </div>
 
             <span className="online-status">
+
               <i></i>
+
               Activo
+
             </span>
 
           </div>
@@ -424,13 +668,16 @@ function Inicio({
                   >
 
                     <div className="avatar">
+
                       {obtenerInicial(
                         trabajador.nombre
                       )}
+
                     </div>
 
 
                     <div>
+
                       <strong>
                         {trabajador.nombre}
                       </strong>
@@ -439,6 +686,7 @@ function Inicio({
                         {trabajador.cargo ||
                           "Vigilante"}
                       </span>
+
                     </div>
 
 
@@ -450,6 +698,7 @@ function Inicio({
 
                 )
               )
+
             )}
 
           </div>
@@ -459,11 +708,111 @@ function Inicio({
       </section>
 
 
-      <section className="panel" style={{ marginTop: "20px" }}>
+      {/* =================================================
+          RESUMEN DEL PERÍODO
+      ================================================= */}
+
+      <section
+        className="panel"
+        style={{
+          marginTop: "20px",
+        }}
+      >
 
         <div className="panel-header">
 
           <div>
+
+            <span className="panel-label">
+              RESUMEN
+            </span>
+
+            <h3>
+              Información de los próximos 15 días
+            </h3>
+
+          </div>
+
+          <span className="online-status">
+            {resumenPeriodo.total} turnos
+          </span>
+
+        </div>
+
+
+        <div className="calendar-footer">
+
+          <div>
+
+            <strong>
+              {resumenPeriodo.total}
+            </strong>
+
+            <span>
+              turnos asignados
+            </span>
+
+          </div>
+
+
+          <div>
+
+            <strong>
+              {resumenPeriodo.dia}
+            </strong>
+
+            <span>
+              turnos de día
+            </span>
+
+          </div>
+
+
+          <div>
+
+            <strong>
+              {resumenPeriodo.noche}
+            </strong>
+
+            <span>
+              turnos de noche
+            </span>
+
+          </div>
+
+
+          <div>
+
+            <strong>
+              {diasLibresPeriodo}
+            </strong>
+
+            <span>
+              días libres
+            </span>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      {/* =================================================
+          PRÓXIMOS TURNOS
+      ================================================= */}
+
+      <section
+        className="panel"
+        style={{
+          marginTop: "20px",
+        }}
+      >
+
+        <div className="panel-header">
+
+          <div>
+
             <span className="panel-label">
               PRÓXIMOS TURNOS
             </span>
@@ -471,10 +820,13 @@ function Inicio({
             <h3>
               Próximas jornadas
             </h3>
+
           </div>
 
           <span className="online-status">
+
             {proximosTurnos.length} programados
+
           </span>
 
         </div>
@@ -512,6 +864,7 @@ function Inicio({
                     </strong>
 
                     <span>
+
                       {fecha
                         .toLocaleDateString(
                           "es-CO",
@@ -522,15 +875,18 @@ function Inicio({
                         )
                         .replace(".", "")
                         .toUpperCase()}
+
                     </span>
 
                   </div>
 
 
                   <div className="shift-icon">
+
                     {turno === "dia"
                       ? "☀"
                       : "☾"}
+
                   </div>
 
 
@@ -556,9 +912,11 @@ function Inicio({
                         : "noche"
                     }`}
                   >
+
                     {turno === "dia"
                       ? "DÍA"
                       : "NOCHE"}
+
                   </span>
 
                 </div>
