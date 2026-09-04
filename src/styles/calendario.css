@@ -125,23 +125,16 @@
   display: inline-block;
 }
 
-/* =====================================================
-   COLORES DE ESTADOS
-===================================================== */
-
-/* ☀️ DÍA */
 .legend-day {
-  background: #d97706;
+  background: #2e90fa;
 }
 
-/* 🌙 NOCHE */
 .legend-night {
-  background: #155e75;
+  background: #7f56d9;
 }
 
-/* ✓ LIBRE */
 .legend-free {
-  background: #16a34a;
+  background: #d0d5dd;
 }
 
 /* =====================================================
@@ -381,36 +374,15 @@
   box-shadow: 0 4px 12px rgba(16, 24, 40, 0.08);
 }
 
-/* =====================================================
-   ☀️ TURNO DE DÍA
-===================================================== */
-
 .shift-card.day {
-  background: #fff4d6;
-  color: #a15c00;
+  background: #eff8ff;
+  color: #175cd3;
 }
-
-/* =====================================================
-   🌙 TURNO DE NOCHE
-===================================================== */
 
 .shift-card.night {
-  background: #e8f0f5;
-  color: #164e63;
+  background: #f9f5ff;
+  color: #6941c6;
 }
-
-/* =====================================================
-   ✓ DÍA LIBRE
-===================================================== */
-
-.shift-card.free {
-  background: #edf7f1;
-  color: #166534;
-}
-
-/* =====================================================
-   SÍMBOLO DEL TURNO
-===================================================== */
 
 .shift-symbol {
   width: 28px;
@@ -426,18 +398,6 @@
   background: rgba(255, 255, 255, 0.75);
 
   font-size: 15px;
-}
-
-.shift-card.day .shift-symbol {
-  color: #a15c00;
-}
-
-.shift-card.night .shift-symbol {
-  color: #164e63;
-}
-
-.shift-card.free .shift-symbol {
-  color: #166534;
 }
 
 .shift-card > div:last-child {
@@ -462,7 +422,7 @@
 }
 
 /* =====================================================
-   CELDA LIBRE / SIN ASIGNAR
+   CELDA LIBRE
 ===================================================== */
 
 .free-cell {
@@ -664,15 +624,15 @@
 }
 
 .option-day {
-  border: 1px solid #f0c36a;
-  background: #fff4d6;
-  color: #a15c00;
+  border: 1px solid #b2ddff;
+  background: #eff8ff;
+  color: #175cd3;
 }
 
 .option-night {
-  border: 1px solid #8eb6c7;
-  background: #e8f0f5;
-  color: #164e63;
+  border: 1px solid #d6bbfb;
+  background: #f9f5ff;
+  color: #6941c6;
 }
 
 .option-day:hover,
@@ -1187,4 +1147,4 @@
   .legend span {
     font-size: 7px;
   }
-}
+    }
