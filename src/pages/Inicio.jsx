@@ -5,17 +5,8 @@ function Inicio({
   turnos = {},
   onIrCalendario,
 }) {
-  /* =====================================================
-     FECHA ACTUAL
-  ===================================================== */
-
   const hoy = new Date();
-
   hoy.setHours(0, 0, 0, 0);
-
-  /* =====================================================
-     CONVERTIR FECHA A YYYY-MM-DD
-  ===================================================== */
 
   const obtenerClaveFecha = (fecha) => {
     const year = fecha.getFullYear();
@@ -31,24 +22,13 @@ function Inicio({
     return `${year}-${month}-${day}`;
   };
 
-  /* =====================================================
-     FORMATEAR FECHA
-  ===================================================== */
-
   const formatearFecha = (fecha) => {
-    return fecha.toLocaleDateString(
-      "es-CO",
-      {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-      }
-    );
+    return fecha.toLocaleDateString("es-CO", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    });
   };
-
-  /* =====================================================
-     INICIAL DEL TRABAJADOR
-  ===================================================== */
 
   const obtenerInicial = (nombre) => {
     return (
@@ -58,13 +38,6 @@ function Inicio({
         ?.toUpperCase() || "?"
     );
   };
-
-  /* =====================================================
-     PERÍODO DE 15 DÍAS
-     
-     El dashboard trabaja con:
-     HOY + 14 DÍAS
-  ===================================================== */
 
   const diasPeriodo = useMemo(() => {
     return Array.from(
@@ -83,26 +56,16 @@ function Inicio({
     );
   }, []);
 
-  /* =====================================================
-     FECHA FINAL DEL PERÍODO
-  ===================================================== */
-
-  const fechaFinalPeriodo =
-    diasPeriodo[diasPeriodo.length - 1];
-
-  /* =====================================================
-     TEXTO DEL PERÍODO
-  ===================================================== */
-
   const textoPeriodo = useMemo(() => {
     const inicio = diasPeriodo[0];
-    const fin = diasPeriodo[
-      diasPeriodo.length - 1
-    ];
+
+    const fin =
+      diasPeriodo[
+        diasPeriodo.length - 1
+      ];
 
     const mismoMes =
-      inicio.getMonth() ===
-        fin.getMonth() &&
+      inicio.getMonth() === fin.getMonth() &&
       inicio.getFullYear() ===
         fin.getFullYear();
 
@@ -135,42 +98,25 @@ function Inicio({
       )}`;
   }, [diasPeriodo]);
 
-  /* =====================================================
-     TURNOS DE HOY
-  ===================================================== */
-
   const turnoHoy = useMemo(() => {
-    const clave =
-      obtenerClaveFecha(hoy);
+    const clave = obtenerClaveFecha(hoy);
 
     const resultado = [];
 
-    trabajadores.forEach(
-      (trabajador) => {
-        const turno =
-          turnos?.[clave]?.[
-            trabajador.id
-          ];
+    trabajadores.forEach((trabajador) => {
+      const turno =
+        turnos?.[clave]?.[trabajador.id];
 
-        if (turno) {
-          resultado.push({
-            trabajador,
-            turno,
-          });
-        }
+      if (turno) {
+        resultado.push({
+          trabajador,
+          turno,
+        });
       }
-    );
+    });
 
     return resultado;
   }, [trabajadores, turnos]);
-
-  /* =====================================================
-     TURNOS DEL PERÍODO DE 15 DÍAS
-     
-     IMPORTANTE:
-     Solo cuenta los turnos que aparecen
-     dentro de estos 15 días.
-  ===================================================== */
 
   const resumenPeriodo = useMemo(() => {
     let total = 0;
@@ -184,24 +130,20 @@ function Inicio({
       const turnosDelDia =
         turnos?.[clave] || {};
 
-      trabajadores.forEach(
-        (trabajador) => {
-          const turno =
-            turnosDelDia?.[
-              trabajador.id
-            ];
+      trabajadores.forEach((trabajador) => {
+        const turno =
+          turnosDelDia?.[trabajador.id];
 
-          if (turno === "dia") {
-            total++;
-            dia++;
-          }
-
-          if (turno === "noche") {
-            total++;
-            noche++;
-          }
+        if (turno === "dia") {
+          total++;
+          dia++;
         }
-      );
+
+        if (turno === "noche") {
+          total++;
+          noche++;
+        }
+      });
     });
 
     return {
@@ -215,13 +157,6 @@ function Inicio({
     turnos,
   ]);
 
-  /* =====================================================
-     PRÓXIMOS TURNOS
-     
-     Desde mañana hasta completar
-     los 15 días del período.
-  ===================================================== */
-
   const proximosTurnos = useMemo(() => {
     const resultado = [];
 
@@ -230,28 +165,23 @@ function Inicio({
       i < diasPeriodo.length;
       i++
     ) {
-      const fecha =
-        diasPeriodo[i];
+      const fecha = diasPeriodo[i];
 
       const clave =
         obtenerClaveFecha(fecha);
 
-      trabajadores.forEach(
-        (trabajador) => {
-          const turno =
-            turnos?.[clave]?.[
-              trabajador.id
-            ];
+      trabajadores.forEach((trabajador) => {
+        const turno =
+          turnos?.[clave]?.[trabajador.id];
 
-          if (turno) {
-            resultado.push({
-              fecha: new Date(fecha),
-              trabajador,
-              turno,
-            });
-          }
+        if (turno) {
+          resultado.push({
+            fecha: new Date(fecha),
+            trabajador,
+            turno,
+          });
         }
-      );
+      });
     }
 
     return resultado.slice(0, 6);
@@ -261,55 +191,8 @@ function Inicio({
     turnos,
   ]);
 
-  /* =====================================================
-     CANTIDAD DE DÍAS LIBRES DEL PERÍODO
-     
-     Un día libre = trabajador sin turno
-     en una de las 15 fechas.
-  ===================================================== */
-
-  const diasLibresPeriodo =
-    useMemo(() => {
-      let libres = 0;
-
-      diasPeriodo.forEach((fecha) => {
-        const clave =
-          obtenerClaveFecha(fecha);
-
-        const turnosDelDia =
-          turnos?.[clave] || {};
-
-        trabajadores.forEach(
-          (trabajador) => {
-            const turno =
-              turnosDelDia?.[
-                trabajador.id
-              ];
-
-            if (!turno) {
-              libres++;
-            }
-          }
-        );
-      });
-
-      return libres;
-    }, [
-      diasPeriodo,
-      trabajadores,
-      turnos,
-    ]);
-
-  /* =====================================================
-     RENDER
-  ===================================================== */
-
   return (
     <main className="dashboard">
-
-      {/* =================================================
-          ENCABEZADO
-      ================================================= */}
 
       <section className="welcome">
 
@@ -352,12 +235,9 @@ function Inicio({
 
           <small>
             {hoy
-              .toLocaleDateString(
-                "es-CO",
-                {
-                  month: "short",
-                }
-              )
+              .toLocaleDateString("es-CO", {
+                month: "short",
+              })
               .replace(".", "")
               .toUpperCase()}
           </small>
@@ -366,14 +246,7 @@ function Inicio({
 
       </section>
 
-
-      {/* =================================================
-          ESTADÍSTICAS
-      ================================================= */}
-
       <section className="stats-grid">
-
-        {/* TRABAJADORES */}
 
         <div className="stat-card">
 
@@ -399,9 +272,6 @@ function Inicio({
 
         </div>
 
-
-        {/* TURNOS */}
-
         <div className="stat-card">
 
           <div className="stat-icon green">
@@ -426,9 +296,6 @@ function Inicio({
 
         </div>
 
-
-        {/* DÍA */}
-
         <div className="stat-card">
 
           <div className="stat-icon orange">
@@ -452,9 +319,6 @@ function Inicio({
           </div>
 
         </div>
-
-
-        {/* NOCHE */}
 
         <div className="stat-card">
 
@@ -482,16 +346,7 @@ function Inicio({
 
       </section>
 
-
-      {/* =================================================
-          CONTENIDO PRINCIPAL
-      ================================================= */}
-
       <section className="content-grid">
-
-        {/* =================================================
-            TURNOS DE HOY
-        ================================================= */}
 
         <div className="panel">
 
@@ -518,7 +373,6 @@ function Inicio({
             </button>
 
           </div>
-
 
           <div className="shift-list">
 
@@ -566,7 +420,6 @@ function Inicio({
 
                     </div>
 
-
                     <div className="shift-icon">
 
                       {turno === "dia"
@@ -574,7 +427,6 @@ function Inicio({
                         : "☾"}
 
                     </div>
-
 
                     <div className="shift-info">
 
@@ -590,7 +442,6 @@ function Inicio({
 
                     </div>
 
-
                     <span
                       className={`shift-status ${
                         turno === "dia"
@@ -598,11 +449,9 @@ function Inicio({
                           : "noche"
                       }`}
                     >
-
                       {turno === "dia"
                         ? "DÍA"
                         : "NOCHE"}
-
                     </span>
 
                   </div>
@@ -615,11 +464,6 @@ function Inicio({
           </div>
 
         </div>
-
-
-        {/* =================================================
-            PERSONAL REGISTRADO
-        ================================================= */}
 
         <div className="panel">
 
@@ -646,7 +490,6 @@ function Inicio({
             </span>
 
           </div>
-
 
           <div className="team-list">
 
@@ -675,7 +518,6 @@ function Inicio({
 
                     </div>
 
-
                     <div>
 
                       <strong>
@@ -688,7 +530,6 @@ function Inicio({
                       </span>
 
                     </div>
-
 
                     <span className="person-active">
                       ACTIVO
@@ -706,101 +547,6 @@ function Inicio({
         </div>
 
       </section>
-
-
-      {/* =================================================
-          RESUMEN DEL PERÍODO
-      ================================================= */}
-
-      <section
-        className="panel"
-        style={{
-          marginTop: "20px",
-        }}
-      >
-
-        <div className="panel-header">
-
-          <div>
-
-            <span className="panel-label">
-              RESUMEN
-            </span>
-
-            <h3>
-              Información de los próximos 15 días
-            </h3>
-
-          </div>
-
-          <span className="online-status">
-            {resumenPeriodo.total} turnos
-          </span>
-
-        </div>
-
-
-        <div className="calendar-footer">
-
-          <div>
-
-            <strong>
-              {resumenPeriodo.total}
-            </strong>
-
-            <span>
-              turnos asignados
-            </span>
-
-          </div>
-
-
-          <div>
-
-            <strong>
-              {resumenPeriodo.dia}
-            </strong>
-
-            <span>
-              turnos de día
-            </span>
-
-          </div>
-
-
-          <div>
-
-            <strong>
-              {resumenPeriodo.noche}
-            </strong>
-
-            <span>
-              turnos de noche
-            </span>
-
-          </div>
-
-
-          <div>
-
-            <strong>
-              {diasLibresPeriodo}
-            </strong>
-
-            <span>
-              días libres
-            </span>
-
-          </div>
-
-        </div>
-
-      </section>
-
-
-      {/* =================================================
-          PRÓXIMOS TURNOS
-      ================================================= */}
 
       <section
         className="panel"
@@ -824,13 +570,10 @@ function Inicio({
           </div>
 
           <span className="online-status">
-
             {proximosTurnos.length} programados
-
           </span>
 
         </div>
-
 
         <div className="shift-list">
 
@@ -880,7 +623,6 @@ function Inicio({
 
                   </div>
 
-
                   <div className="shift-icon">
 
                     {turno === "dia"
@@ -888,7 +630,6 @@ function Inicio({
                       : "☾"}
 
                   </div>
-
 
                   <div className="shift-info">
 
@@ -903,7 +644,6 @@ function Inicio({
                     </span>
 
                   </div>
-
 
                   <span
                     className={`shift-status ${
