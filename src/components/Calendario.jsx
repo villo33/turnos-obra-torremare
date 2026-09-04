@@ -10,9 +10,7 @@ function Calendario({
 }) {
   /* =====================================================
      FECHA INICIAL
-     COMIENZA EN EL LUNES DE LA SEMANA ACTUAL
-     Y MUESTRA 15 DÍAS
-  ===================================================== */
+     ===================================================== */
 
   const [fechaInicio, setFechaInicio] = useState(() => {
     const fecha = new Date();
@@ -32,9 +30,8 @@ function Calendario({
   });
 
   /* =====================================================
-     DÍAS DEL PERÍODO
-     15 DÍAS EXACTOS
-  ===================================================== */
+     15 DÍAS DEL PERÍODO
+     ===================================================== */
 
   const dias = useMemo(() => {
     return Array.from(
@@ -54,8 +51,8 @@ function Calendario({
   }, [fechaInicio]);
 
   /* =====================================================
-     CONVERTIR FECHA A YYYY-MM-DD
-  ===================================================== */
+     FECHA → YYYY-MM-DD
+     ===================================================== */
 
   const obtenerClaveFecha = (fecha) => {
     const year = fecha.getFullYear();
@@ -73,24 +70,21 @@ function Calendario({
 
   /* =====================================================
      SABER SI ES HOY
-  ===================================================== */
+     ===================================================== */
 
   const esHoy = (fecha) => {
     const hoy = new Date();
 
     return (
-      hoy.getFullYear() ===
-        fecha.getFullYear() &&
-      hoy.getMonth() ===
-        fecha.getMonth() &&
-      hoy.getDate() ===
-        fecha.getDate()
+      hoy.getFullYear() === fecha.getFullYear() &&
+      hoy.getMonth() === fecha.getMonth() &&
+      hoy.getDate() === fecha.getDate()
     );
   };
 
   /* =====================================================
      NOMBRE DEL DÍA
-  ===================================================== */
+     ===================================================== */
 
   const nombreDia = (fecha) => {
     return fecha
@@ -103,30 +97,25 @@ function Calendario({
 
   /* =====================================================
      NOMBRE DEL MES
-  ===================================================== */
+     ===================================================== */
 
   const nombreMes = (fecha) => {
-    return fecha.toLocaleDateString(
-      "es-CO",
-      {
-        month: "long",
-      }
-    );
+    return fecha.toLocaleDateString("es-CO", {
+      month: "long",
+    });
   };
 
   /* =====================================================
      INFORMACIÓN DEL PERÍODO
-  ===================================================== */
+     ===================================================== */
 
   const obtenerTextoPeriodo = () => {
     const inicio = dias[0];
     const fin = dias[dias.length - 1];
 
     const mismoMes =
-      inicio.getMonth() ===
-        fin.getMonth() &&
-      inicio.getFullYear() ===
-        fin.getFullYear();
+      inicio.getMonth() === fin.getMonth() &&
+      inicio.getFullYear() === fin.getFullYear();
 
     if (mismoMes) {
       return (
@@ -137,8 +126,7 @@ function Calendario({
 
           <span>
             {" "}
-            {inicio.getDate()} —{" "}
-            {fin.getDate()}
+            {inicio.getDate()} — {fin.getDate()}
           </span>
 
           <small>
@@ -179,8 +167,7 @@ function Calendario({
 
   /* =====================================================
      CAMBIAR PERÍODO
-     AVANZA / RETROCEDE 15 DÍAS
-  ===================================================== */
+     ===================================================== */
 
   const cambiarPeriodo = (cantidad) => {
     setFechaInicio((actual) => {
@@ -197,7 +184,7 @@ function Calendario({
 
   /* =====================================================
      IR AL PERÍODO ACTUAL
-  ===================================================== */
+     ===================================================== */
 
   const irHoy = () => {
     const fecha = new Date();
@@ -218,7 +205,7 @@ function Calendario({
 
   /* =====================================================
      OBTENER TURNO
-  ===================================================== */
+     ===================================================== */
 
   const obtenerTurno = (
     fecha,
@@ -235,25 +222,24 @@ function Calendario({
   };
 
   /* =====================================================
-     RESUMEN DEL PERÍODO
+     RESUMEN REAL DE LOS 15 DÍAS
      
-     IMPORTANTE:
-     SOLO CUENTA LOS TURNOS DE LOS
-     15 DÍAS QUE SE ESTÁN MOSTRANDO.
+     SOLO SE ANALIZAN LAS FECHAS VISIBLES
+     EN EL CALENDARIO.
   ===================================================== */
 
   const resumenPeriodo = useMemo(() => {
     let total = 0;
-    let diasTurno = 0;
-    let nochesTurno = 0;
-    let libres = 0;
+    let dia = 0;
+    let noche = 0;
+    let libre = 0;
 
     dias.forEach((fecha) => {
-      const clave =
+      const claveFecha =
         obtenerClaveFecha(fecha);
 
       const turnosDelDia =
-        turnos?.[clave] || {};
+        turnos?.[claveFecha] || {};
 
       trabajadores.forEach(
         (trabajador) => {
@@ -264,12 +250,12 @@ function Calendario({
 
           if (turno === "dia") {
             total++;
-            diasTurno++;
+            dia++;
           } else if (turno === "noche") {
             total++;
-            nochesTurno++;
+            noche++;
           } else {
-            libres++;
+            libre++;
           }
         }
       );
@@ -277,9 +263,9 @@ function Calendario({
 
     return {
       total,
-      dias: diasTurno,
-      noches: nochesTurno,
-      libres,
+      dia,
+      noche,
+      libre,
     };
   }, [
     dias,
@@ -288,8 +274,60 @@ function Calendario({
   ]);
 
   /* =====================================================
-     SELECCIONAR CELDA LIBRE
+     INFORMACIÓN POR TRABAJADOR
+     
+     AQUÍ SE CALCULAN LOS DATOS QUE APARECEN
+     EN "PERSONAL EN ESTE PERÍODO".
   ===================================================== */
+
+  const resumenPersonal = useMemo(() => {
+    return trabajadores.map(
+      (trabajador) => {
+        let total = 0;
+        let dia = 0;
+        let noche = 0;
+        let libre = 0;
+
+        dias.forEach((fecha) => {
+          const claveFecha =
+            obtenerClaveFecha(fecha);
+
+          const turno =
+            turnos?.[claveFecha]?.[
+              trabajador.id
+            ];
+
+          if (turno === "dia") {
+            total++;
+            dia++;
+          } else if (
+            turno === "noche"
+          ) {
+            total++;
+            noche++;
+          } else {
+            libre++;
+          }
+        });
+
+        return {
+          trabajador,
+          total,
+          dia,
+          noche,
+          libre,
+        };
+      }
+    );
+  }, [
+    trabajadores,
+    turnos,
+    dias,
+  ]);
+
+  /* =====================================================
+     SELECCIONAR CELDA LIBRE
+     ===================================================== */
 
   const seleccionarCelda = (
     fecha,
@@ -312,7 +350,7 @@ function Calendario({
 
   /* =====================================================
      ELIMINAR TURNO
-  ===================================================== */
+     ===================================================== */
 
   const eliminarCelda = async (
     fecha,
@@ -335,7 +373,7 @@ function Calendario({
 
   /* =====================================================
      CONFIRMAR ELIMINACIÓN
-  ===================================================== */
+     ===================================================== */
 
   const confirmarEliminar = (
     fecha,
@@ -383,7 +421,7 @@ function Calendario({
 
   /* =====================================================
      RENDER
-  ===================================================== */
+     ===================================================== */
 
   return (
     <>
@@ -467,7 +505,7 @@ function Calendario({
               opacity: 0.7,
             }}
           >
-            PERÍODO DE 15 DÍAS:
+            PERÍODO:
           </span>
 
           {obtenerTextoPeriodo()}
@@ -497,25 +535,21 @@ function Calendario({
 
 
       {/* =================================================
-          CALENDARIO
+          CALENDARIO DE 15 DÍAS
       ================================================= */}
 
       <div className="calendar-container">
 
         <div className="calendar-grid">
 
-          {/* =================================================
-              ESQUINA
-          ================================================= */}
+          {/* ESQUINA */}
 
           <div className="corner-cell">
             PERSONAL / DÍAS
           </div>
 
 
-          {/* =================================================
-              ENCABEZADOS DE LOS 15 DÍAS
-          ================================================= */}
+          {/* 15 DÍAS */}
 
           {dias.map((fecha) => (
 
@@ -549,9 +583,7 @@ function Calendario({
           ))}
 
 
-          {/* =================================================
-              FILAS DE TRABAJADORES
-          ================================================= */}
+          {/* TRABAJADORES */}
 
           {trabajadores.map(
             (trabajador) => (
@@ -561,9 +593,7 @@ function Calendario({
                 key={trabajador.id}
               >
 
-                {/* =========================================
-                    INFORMACIÓN DEL TRABAJADOR
-                ========================================= */}
+                {/* INFORMACIÓN */}
 
                 <div className="worker-name">
 
@@ -593,9 +623,7 @@ function Calendario({
                 </div>
 
 
-                {/* =========================================
-                    15 DÍAS
-                ========================================= */}
+                {/* DÍAS */}
 
                 {dias.map((fecha) => {
 
@@ -623,10 +651,6 @@ function Calendario({
 
                       {turno ? (
 
-                        /* =================================
-                            TURNO ASIGNADO
-                        ================================= */
-
                         <TurnoCard
                           tipo={turno}
                           onClick={() =>
@@ -639,10 +663,6 @@ function Calendario({
                         />
 
                       ) : (
-
-                        /* =================================
-                            CELDA LIBRE
-                        ================================= */
 
                         <button
                           type="button"
@@ -686,16 +706,16 @@ function Calendario({
 
 
       {/* =================================================
-          RESUMEN DEL PERÍODO
+          RESUMEN GENERAL DE LOS 15 DÍAS
       ================================================= */}
 
-      <div className="calendar-summary">
+      <section className="panel calendario-resumen">
 
-        <div className="calendar-summary-header">
+        <div className="panel-header">
 
           <div>
 
-            <span className="calendario-label">
+            <span className="panel-label">
               RESUMEN DEL PERÍODO
             </span>
 
@@ -704,34 +724,20 @@ function Calendario({
             </h3>
 
             <p>
-              Información correspondiente
-              a los 15 días mostrados.
+              Información de los 15 días
+              mostrados en el calendario.
             </p>
 
           </div>
 
-          <div className="summary-period">
-
-            <strong>
-              15
-            </strong>
-
-            <span>
-              días
-            </span>
-
-          </div>
+          <span className="online-status">
+            {dias.length} días
+          </span>
 
         </div>
 
 
-        {/* =================================================
-            ESTADÍSTICAS
-        ================================================= */}
-
         <div className="calendar-footer">
-
-          {/* TOTAL */}
 
           <div>
 
@@ -746,12 +752,10 @@ function Calendario({
           </div>
 
 
-          {/* DÍA */}
-
           <div>
 
             <strong>
-              {resumenPeriodo.dias}
+              {resumenPeriodo.dia}
             </strong>
 
             <span>
@@ -761,12 +765,10 @@ function Calendario({
           </div>
 
 
-          {/* NOCHE */}
-
           <div>
 
             <strong>
-              {resumenPeriodo.noches}
+              {resumenPeriodo.noche}
             </strong>
 
             <span>
@@ -776,12 +778,10 @@ function Calendario({
           </div>
 
 
-          {/* LIBRES */}
-
           <div>
 
             <strong>
-              {resumenPeriodo.libres}
+              {resumenPeriodo.libre}
             </strong>
 
             <span>
@@ -792,55 +792,158 @@ function Calendario({
 
         </div>
 
+      </section>
 
-        {/* =================================================
-            INFORMACIÓN DEL PERSONAL
-        ================================================= */}
 
-        <div className="personal-periodo">
+      {/* =================================================
+          PERSONAL EN EL PERÍODO
+          
+          ESTA ES LA PARTE QUE REEMPLAZA
+          "PERSONAL ESTA SEMANA".
+      ================================================= */}
 
-          <div>
+      <section
+        className="panel personal-periodo-panel"
+        style={{
+          marginTop: "20px",
+        }}
+      >
 
-            <strong>
-              {trabajadores.length}
-            </strong>
-
-            <span>
-              personal registrado
-            </span>
-
-          </div>
-
-          <div>
-
-            <strong>
-              {trabajadores.length *
-                dias.length}
-            </strong>
-
-            <span>
-              jornadas disponibles
-            </span>
-
-          </div>
+        <div className="panel-header">
 
           <div>
 
-            <strong>
-              {resumenPeriodo.total}
-            </strong>
-
-            <span>
-              jornadas programadas
+            <span className="panel-label">
+              PERSONAL
             </span>
 
+            <h3>
+              Personal en este período
+            </h3>
+
+            <p>
+              Distribución de turnos de cada
+              trabajador durante los 15 días.
+            </p>
+
           </div>
+
+          <span className="online-status">
+
+            {trabajadores.length}{" "}
+            {trabajadores.length === 1
+              ? "trabajador"
+              : "trabajadores"}
+
+          </span>
 
         </div>
 
-      </div>
-    </>
-  );
-}
 
-export default Calendario;
+        {/* =================================================
+            LISTA DEL PERSONAL
+        ================================================= */}
+
+        <div className="personal-periodo-list">
+
+          {resumenPersonal.length === 0 ? (
+
+            <div className="resumen-vacio">
+              No hay trabajadores
+              registrados.
+            </div>
+
+          ) : (
+
+            resumenPersonal.map(
+              ({
+                trabajador,
+                total,
+                dia,
+                noche,
+                libre,
+              }) => (
+
+                <div
+                  className="personal-periodo-row"
+                  key={trabajador.id}
+                >
+
+                  {/* ================================
+                      TRABAJADOR
+                  ================================= */}
+
+                  <div className="personal-periodo-person">
+
+                    <div className="worker-avatar">
+
+                      {trabajador.nombre
+                        ?.trim()
+                        ?.charAt(0)
+                        ?.toUpperCase() ||
+                        "?"}
+
+                    </div>
+
+                    <div>
+
+                      <strong>
+                        {trabajador.nombre}
+                      </strong>
+
+                      <span>
+                        {trabajador.cargo ||
+                          "Vigilante"}
+                      </span>
+
+                    </div>
+
+                  </div>
+
+
+                  {/* ================================
+                      TOTAL
+                  ================================= */}
+
+                  <div className="personal-periodo-stat">
+
+                    <strong>
+                      {total}
+                    </strong>
+
+                    <span>
+                      turnos
+                    </span>
+
+                  </div>
+
+
+                  {/* ================================
+                      DÍA
+                  ================================= */}
+
+                  <div className="personal-periodo-stat">
+
+                    <strong>
+                      {dia}
+                    </strong>
+
+                    <span>
+                      día
+                    </span>
+
+                  </div>
+
+
+                  {/* ================================
+                      NOCHE
+                  ================================= */}
+
+                  <div className="personal-periodo-stat">
+
+                    <strong>
+                      {noche}
+                    </strong>
+
+                    <span>
+         
