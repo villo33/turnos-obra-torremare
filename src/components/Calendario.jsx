@@ -633,7 +633,7 @@ function Calendario({
 
       <section className="calendar-footer-panel">
 
-        {/* ENCABEZADO DEL FOOTER */}
+        {/* ENCABEZADO */}
 
         <div className="calendar-footer-header">
 
@@ -655,7 +655,9 @@ function Calendario({
 
         </div>
 
-        {/* ESTADÍSTICAS */}
+        {/* =================================================
+            ESTADÍSTICAS
+        ================================================= */}
 
         <div className="calendar-footer-stats">
 
@@ -802,6 +804,8 @@ function Calendario({
                     key={trabajador.id}
                   >
 
+                    {/* PERSONA */}
+
                     <div className="calendar-worker-person">
 
                       <div className="worker-avatar">
@@ -829,40 +833,60 @@ function Calendario({
 
                     </div>
 
+                    {/* TOTAL */}
+
                     <div className="calendar-worker-stat total">
+
                       <strong>
                         {total}
                       </strong>
+
                       <span>
                         turnos
                       </span>
+
                     </div>
 
+                    {/* DÍA */}
+
                     <div className="calendar-worker-stat day">
+
                       <strong>
                         {dia}
                       </strong>
+
                       <span>
                         día
                       </span>
+
                     </div>
 
+                    {/* NOCHE */}
+
                     <div className="calendar-worker-stat night">
+
                       <strong>
                         {noche}
                       </strong>
+
                       <span>
                         noche
                       </span>
+
                     </div>
 
+                    {/* LIBRES */}
+
                     <div className="calendar-worker-stat free">
+
                       <strong>
                         {libre}
                       </strong>
+
                       <span>
                         libres
                       </span>
+
                     </div>
 
                   </div>
@@ -919,7 +943,63 @@ function Calendario({
                   )}
                 >
 
+                  {/* FECHA */}
+
                   <div className="calendar-day-summary-date">
 
                     <span>
                       {nombreDia(fecha)}
+                    </span>
+
+                    <strong>
+                      {fecha.getDate()}
+                    </strong>
+
+                  </div>
+
+                  {/* TOTAL */}
+
+                  <div className="calendar-day-summary-total">
+
+                    <strong>
+                      {total}
+                    </strong>
+
+                    <span>
+                      {total === 1
+                        ? "turno"
+                        : "turnos"}
+                    </span>
+
+                  </div>
+
+                  {/* DETALLE */}
+
+                  <div className="calendar-day-summary-detail">
+
+                    <span className="daily-day">
+                      ☀ {dia}
+                    </span>
+
+                    <span className="daily-night">
+                      ☾ {noche}
+                    </span>
+
+                  </div>
+
+                </div>
+
+              )
+            )}
+
+          </div>
+
+        </div>
+
+      </section>
+
+    </>
+  );
+}
+
+export default Calendario;
