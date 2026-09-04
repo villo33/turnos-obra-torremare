@@ -10,7 +10,7 @@ function Calendario({
 }) {
   /* =====================================================
      FECHA INICIAL
-     ===================================================== */
+  ===================================================== */
 
   const [fechaInicio, setFechaInicio] = useState(() => {
     const fecha = new Date();
@@ -31,7 +31,7 @@ function Calendario({
 
   /* =====================================================
      15 DÍAS DEL PERÍODO
-     ===================================================== */
+  ===================================================== */
 
   const dias = useMemo(() => {
     return Array.from(
@@ -52,7 +52,7 @@ function Calendario({
 
   /* =====================================================
      FECHA → YYYY-MM-DD
-     ===================================================== */
+  ===================================================== */
 
   const obtenerClaveFecha = (fecha) => {
     const year = fecha.getFullYear();
@@ -70,7 +70,7 @@ function Calendario({
 
   /* =====================================================
      SABER SI ES HOY
-     ===================================================== */
+  ===================================================== */
 
   const esHoy = (fecha) => {
     const hoy = new Date();
@@ -84,7 +84,7 @@ function Calendario({
 
   /* =====================================================
      NOMBRE DEL DÍA
-     ===================================================== */
+  ===================================================== */
 
   const nombreDia = (fecha) => {
     return fecha
@@ -96,78 +96,8 @@ function Calendario({
   };
 
   /* =====================================================
-     NOMBRE DEL MES
-     ===================================================== */
-
-  const nombreMes = (fecha) => {
-    return fecha.toLocaleDateString("es-CO", {
-      month: "long",
-    });
-  };
-
-  /* =====================================================
-     INFORMACIÓN DEL PERÍODO
-     ===================================================== */
-
-  const obtenerTextoPeriodo = () => {
-    const inicio = dias[0];
-    const fin = dias[dias.length - 1];
-
-    const mismoMes =
-      inicio.getMonth() === fin.getMonth() &&
-      inicio.getFullYear() === fin.getFullYear();
-
-    if (mismoMes) {
-      return (
-        <>
-          <strong>
-            {nombreMes(inicio)}
-          </strong>
-
-          <span>
-            {" "}
-            {inicio.getDate()} — {fin.getDate()}
-          </span>
-
-          <small>
-            {" "}
-            {fin.getFullYear()}
-          </small>
-        </>
-      );
-    }
-
-    return (
-      <>
-        <strong>
-          {nombreMes(inicio)}
-        </strong>
-
-        <span>
-          {" "}
-          {inicio.getDate()} —{" "}
-        </span>
-
-        <strong>
-          {nombreMes(fin)}
-        </strong>
-
-        <span>
-          {" "}
-          {fin.getDate()}
-        </span>
-
-        <small>
-          {" "}
-          {fin.getFullYear()}
-        </small>
-      </>
-    );
-  };
-
-  /* =====================================================
      CAMBIAR PERÍODO
-     ===================================================== */
+  ===================================================== */
 
   const cambiarPeriodo = (cantidad) => {
     setFechaInicio((actual) => {
@@ -184,7 +114,7 @@ function Calendario({
 
   /* =====================================================
      IR AL PERÍODO ACTUAL
-     ===================================================== */
+  ===================================================== */
 
   const irHoy = () => {
     const fecha = new Date();
@@ -205,7 +135,7 @@ function Calendario({
 
   /* =====================================================
      OBTENER TURNO
-     ===================================================== */
+  ===================================================== */
 
   const obtenerTurno = (
     fecha,
@@ -222,14 +152,13 @@ function Calendario({
   };
 
   /* =====================================================
-     RESUMEN REAL DE LOS 15 DÍAS
-     ===================================================== */
+     RESUMEN GENERAL DEL PERÍODO
+  ===================================================== */
 
   const resumenPeriodo = useMemo(() => {
     let total = 0;
     let dia = 0;
     let noche = 0;
-    let libre = 0;
 
     dias.forEach((fecha) => {
       const claveFecha =
@@ -248,11 +177,11 @@ function Calendario({
           if (turno === "dia") {
             total++;
             dia++;
-          } else if (turno === "noche") {
+          }
+
+          if (turno === "noche") {
             total++;
             noche++;
-          } else {
-            libre++;
           }
         }
       );
@@ -262,7 +191,7 @@ function Calendario({
       total,
       dia,
       noche,
-      libre,
+      personal: trabajadores.length,
     };
   }, [
     dias,
@@ -271,8 +200,56 @@ function Calendario({
   ]);
 
   /* =====================================================
+     RESUMEN POR DÍA
+  ===================================================== */
+
+  const resumenDiario = useMemo(() => {
+    return dias.map((fecha) => {
+      const claveFecha =
+        obtenerClaveFecha(fecha);
+
+      const turnosDelDia =
+        turnos?.[claveFecha] || {};
+
+      let total = 0;
+      let dia = 0;
+      let noche = 0;
+
+      trabajadores.forEach(
+        (trabajador) => {
+          const turno =
+            turnosDelDia?.[
+              trabajador.id
+            ];
+
+          if (turno === "dia") {
+            total++;
+            dia++;
+          }
+
+          if (turno === "noche") {
+            total++;
+            noche++;
+          }
+        }
+      );
+
+      return {
+        fecha,
+        total,
+        dia,
+        noche,
+      };
+    });
+  }, [
+    dias,
+    trabajadores,
+    turnos,
+  ]);
+
+  /* =====================================================
      INFORMACIÓN POR TRABAJADOR
-     ===================================================== */
+  ===================================================== */
 
   const resumenPersonal = useMemo(() => {
     return trabajadores.map(
@@ -321,7 +298,7 @@ function Calendario({
 
   /* =====================================================
      SELECCIONAR CELDA LIBRE
-     ===================================================== */
+  ===================================================== */
 
   const seleccionarCelda = (
     fecha,
@@ -344,7 +321,7 @@ function Calendario({
 
   /* =====================================================
      ELIMINAR TURNO
-     ===================================================== */
+  ===================================================== */
 
   const eliminarCelda = async (
     fecha,
@@ -367,7 +344,7 @@ function Calendario({
 
   /* =====================================================
      CONFIRMAR ELIMINACIÓN
-     ===================================================== */
+  ===================================================== */
 
   const confirmarEliminar = (
     fecha,
@@ -415,7 +392,7 @@ function Calendario({
 
   /* =====================================================
      RENDER
-     ===================================================== */
+  ===================================================== */
 
   return (
     <>
@@ -482,64 +459,21 @@ function Calendario({
 
       </div>
 
-
       {/* =================================================
-          INFORMACIÓN DEL PERÍODO
-      ================================================= */}
-
-      <div className="week-info">
-
-        <div>
-
-          <span
-            style={{
-              marginRight: "8px",
-              fontSize: "12px",
-              fontWeight: "600",
-              opacity: 0.7,
-            }}
-          >
-            PERÍODO:
-          </span>
-
-          {obtenerTextoPeriodo()}
-
-        </div>
-
-        <div className="legend">
-
-          <span>
-            <i className="legend-day"></i>
-            Día
-          </span>
-
-          <span>
-            <i className="legend-night"></i>
-            Noche
-          </span>
-
-          <span>
-            <i className="legend-free"></i>
-            Libre
-          </span>
-
-        </div>
-
-      </div>
-
-
-      {/* =================================================
-          CALENDARIO DE 15 DÍAS
+          CALENDARIO
       ================================================= */}
 
       <div className="calendar-container">
 
         <div className="calendar-grid">
 
+          {/* ESQUINA */}
+
           <div className="corner-cell">
             PERSONAL / DÍAS
           </div>
 
+          {/* DÍAS */}
 
           {dias.map((fecha) => (
 
@@ -572,6 +506,7 @@ function Calendario({
 
           ))}
 
+          {/* TRABAJADORES */}
 
           {trabajadores.map(
             (trabajador) => (
@@ -580,6 +515,8 @@ function Calendario({
                 className="worker-row"
                 key={trabajador.id}
               >
+
+                {/* NOMBRE */}
 
                 <div className="worker-name">
 
@@ -608,6 +545,7 @@ function Calendario({
 
                 </div>
 
+                {/* CELDAS */}
 
                 {dias.map((fecha) => {
 
@@ -667,9 +605,11 @@ function Calendario({
                               : "Día libre"
                           }
                         >
+
                           {puedeEditar
                             ? "+"
                             : "—"}
+
                         </button>
 
                       )}
@@ -680,7 +620,6 @@ function Calendario({
                 })}
 
               </div>
-
             )
           )}
 
@@ -688,259 +627,299 @@ function Calendario({
 
       </div>
 
-
       {/* =================================================
-          RESUMEN GENERAL DE LOS 15 DÍAS
+          FOOTER DEL CALENDARIO
       ================================================= */}
 
-      <section className="panel calendario-resumen">
+      <section className="calendar-footer-panel">
 
-        <div className="panel-header">
+        {/* ENCABEZADO DEL FOOTER */}
+
+        <div className="calendar-footer-header">
 
           <div>
 
-            <span className="panel-label">
-              RESUMEN DEL PERÍODO
+            <span className="calendar-footer-label">
+              DISTRIBUCIÓN DE TURNOS
             </span>
 
             <h3>
-              Distribución de turnos
+              Resumen del período
             </h3>
-
-            <p>
-              Información de los 15 días
-              mostrados en el calendario.
-            </p>
 
           </div>
 
-          <span className="online-status">
-            {dias.length} días
+          <span className="calendar-footer-period">
+            15 DÍAS
           </span>
 
         </div>
 
+        {/* ESTADÍSTICAS */}
 
-        <div className="calendar-footer">
+        <div className="calendar-footer-stats">
 
-          <div>
+          {/* TOTAL */}
 
-            <strong>
-              {resumenPeriodo.total}
-            </strong>
+          <div className="calendar-stat calendar-stat-total">
 
-            <span>
-              turnos asignados
-            </span>
+            <div className="calendar-stat-icon">
+              ✓
+            </div>
 
-          </div>
+            <div>
 
+              <strong>
+                {resumenPeriodo.total}
+              </strong>
 
-          <div>
+              <span>
+                turnos totales
+              </span>
 
-            <strong>
-              {resumenPeriodo.dia}
-            </strong>
-
-            <span>
-              turnos de día
-            </span>
+            </div>
 
           </div>
 
+          {/* DÍA */}
 
-          <div>
+          <div className="calendar-stat calendar-stat-day">
 
-            <strong>
-              {resumenPeriodo.noche}
-            </strong>
+            <div className="calendar-stat-icon">
+              ☀
+            </div>
 
-            <span>
-              turnos de noche
-            </span>
+            <div>
+
+              <strong>
+                {resumenPeriodo.dia}
+              </strong>
+
+              <span>
+                turnos de día
+              </span>
+
+            </div>
 
           </div>
 
+          {/* NOCHE */}
 
-          <div>
+          <div className="calendar-stat calendar-stat-night">
 
-            <strong>
-              {resumenPeriodo.libre}
-            </strong>
+            <div className="calendar-stat-icon">
+              ☾
+            </div>
 
-            <span>
-              días libres
-            </span>
+            <div>
+
+              <strong>
+                {resumenPeriodo.noche}
+              </strong>
+
+              <span>
+                turnos de noche
+              </span>
+
+            </div>
+
+          </div>
+
+          {/* PERSONAL */}
+
+          <div className="calendar-stat calendar-stat-personal">
+
+            <div className="calendar-stat-icon">
+              👥
+            </div>
+
+            <div>
+
+              <strong>
+                {resumenPeriodo.personal}
+              </strong>
+
+              <span>
+                personal
+              </span>
+
+            </div>
 
           </div>
 
         </div>
 
-      </section>
+        {/* =================================================
+            PERSONAL ESTE PERÍODO
+        ================================================= */}
 
+        <div className="calendar-footer-section">
 
-      {/* =================================================
-          PERSONAL EN EL PERÍODO
-      ================================================= */}
+          <div className="calendar-footer-section-header">
 
-      <section
-        className="panel personal-periodo-panel"
-        style={{
-          marginTop: "20px",
-        }}
-      >
+            <div>
 
-        <div className="panel-header">
+              <span className="calendar-footer-mini-label">
+                PERSONAL ESTE PERÍODO
+              </span>
 
-          <div>
+              <h4>
+                Distribución por trabajador
+              </h4>
 
-            <span className="panel-label">
-              PERSONAL
+            </div>
+
+            <span className="calendar-footer-count">
+              {trabajadores.length}{" "}
+              {trabajadores.length === 1
+                ? "persona"
+                : "personas"}
             </span>
 
-            <h3>
-              Personal en este período
-            </h3>
-
-            <p>
-              Distribución de turnos de cada
-              trabajador durante los 15 días.
-            </p>
-
           </div>
-
-          <span className="online-status">
-
-            {trabajadores.length}{" "}
-
-            {trabajadores.length === 1
-              ? "trabajador"
-              : "trabajadores"}
-
-          </span>
-
-        </div>
-
-
-        <div className="personal-periodo-list">
 
           {resumenPersonal.length === 0 ? (
 
-            <div className="resumen-vacio">
-
-              No hay trabajadores
-              registrados.
-
+            <div className="calendar-empty">
+              No hay trabajadores registrados.
             </div>
 
           ) : (
 
-            resumenPersonal.map(
-              ({
-                trabajador,
-                total,
-                dia,
-                noche,
-                libre,
-              }) => (
+            <div className="calendar-workers-summary">
 
-                <div
-                  className="personal-periodo-row"
-                  key={trabajador.id}
-                >
+              {resumenPersonal.map(
+                ({
+                  trabajador,
+                  total,
+                  dia,
+                  noche,
+                  libre,
+                }) => (
 
-                  <div className="personal-periodo-person">
+                  <div
+                    className="calendar-worker-summary"
+                    key={trabajador.id}
+                  >
 
-                    <div className="worker-avatar">
+                    <div className="calendar-worker-person">
 
-                      {trabajador.nombre
-                        ?.trim()
-                        ?.charAt(0)
-                        ?.toUpperCase() ||
-                        "?"}
+                      <div className="worker-avatar">
+
+                        {trabajador.nombre
+                          ?.trim()
+                          ?.charAt(0)
+                          ?.toUpperCase() ||
+                          "?"}
+
+                      </div>
+
+                      <div>
+
+                        <strong>
+                          {trabajador.nombre}
+                        </strong>
+
+                        <span>
+                          {trabajador.cargo ||
+                            "Vigilante"}
+                        </span>
+
+                      </div>
 
                     </div>
 
-                    <div>
-
+                    <div className="calendar-worker-stat total">
                       <strong>
-                        {trabajador.nombre}
+                        {total}
                       </strong>
-
                       <span>
-                        {trabajador.cargo ||
-                          "Vigilante"}
+                        turnos
                       </span>
+                    </div>
 
+                    <div className="calendar-worker-stat day">
+                      <strong>
+                        {dia}
+                      </strong>
+                      <span>
+                        día
+                      </span>
+                    </div>
+
+                    <div className="calendar-worker-stat night">
+                      <strong>
+                        {noche}
+                      </strong>
+                      <span>
+                        noche
+                      </span>
+                    </div>
+
+                    <div className="calendar-worker-stat free">
+                      <strong>
+                        {libre}
+                      </strong>
+                      <span>
+                        libres
+                      </span>
                     </div>
 
                   </div>
 
+                )
+              )}
 
-                  <div className="personal-periodo-stat">
-
-                    <strong>
-                      {total}
-                    </strong>
-
-                    <span>
-                      turnos
-                    </span>
-
-                  </div>
-
-
-                  <div className="personal-periodo-stat">
-
-                    <strong>
-                      {dia}
-                    </strong>
-
-                    <span>
-                      día
-                    </span>
-
-                  </div>
-
-
-                  <div className="personal-periodo-stat">
-
-                    <strong>
-                      {noche}
-                    </strong>
-
-                    <span>
-                      noche
-                    </span>
-
-                  </div>
-
-
-                  <div className="personal-periodo-stat">
-
-                    <strong>
-                      {libre}
-                    </strong>
-
-                    <span>
-                      libres
-                    </span>
-
-                  </div>
-
-                </div>
-
-              )
-            )
+            </div>
 
           )}
 
         </div>
 
-      </section>
+        {/* =================================================
+            DISTRIBUCIÓN DIARIA
+        ================================================= */}
 
-    </>
-  );
-}
+        <div className="calendar-footer-section daily-section">
 
-export default Calendario;
+          <div className="calendar-footer-section-header">
+
+            <div>
+
+              <span className="calendar-footer-mini-label">
+                DISTRIBUCIÓN DIARIA
+              </span>
+
+              <h4>
+                Turnos por día
+              </h4>
+
+            </div>
+
+          </div>
+
+          <div className="calendar-daily-summary">
+
+            {resumenDiario.map(
+              ({
+                fecha,
+                total,
+                dia,
+                noche,
+              }) => (
+
+                <div
+                  className={`calendar-day-summary ${
+                    esHoy(fecha)
+                      ? "is-today"
+                      : ""
+                  }`}
+                  key={obtenerClaveFecha(
+                    fecha
+                  )}
+                >
+
+                  <div className="calendar-day-summary-date">
+
+                    <span>
+                      {nombreDia
