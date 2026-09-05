@@ -6,7 +6,9 @@ self.addEventListener("push", function (event) {
   } catch (error) {
     data = {
       title: "Torre Mare",
-      body: event.data ? event.data.text() : "Tienes una nueva notificación."
+      body: event.data
+        ? event.data.text()
+        : "Tienes una nueva notificación."
     };
   }
 
@@ -35,16 +37,20 @@ self.addEventListener("notificationclick", function (event) {
       type: "window",
       includeUncontrolled: true
     }).then(function (clientList) {
-
       for (const client of clientList) {
         if ("focus" in client) {
-          client.navigate(event.notification.data.url);
+          client.navigate(
+            event.notification.data.url
+          );
+
           return client.focus();
         }
       }
 
       if (clients.openWindow) {
-        return clients.openWindow(event.notification.data.url);
+        return clients.openWindow(
+          event.notification.data.url
+        );
       }
     })
   );
