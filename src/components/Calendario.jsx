@@ -10,22 +10,96 @@ function Calendario({
   onEliminarTurno,
   puedeEditar = false,
 }) {
-  const dias = useMemo(() => {
-    return Array.from({ length: 15 }, (_, indice) => {
-      const fecha = new Date(fechaInicio);
+  /* =====================================================
+     OBTENER INFORMACIÓN DE LA QUINCENA
+  ===================================================== */
 
-      fecha.setDate(
-        fechaInicio.getDate() + indice
-      );
+  const obtenerInformacionQuincena = (fecha) => {
+    const año = fecha.getFullYear();
+    const mes = fecha.getMonth();
+    const dia = fecha.getDate();
 
-      fecha.setHours(0, 0, 0, 0);
+    const ultimoDia = new Date(
+      año,
+      mes + 1,
+      0
+    ).getDate();
 
-      return fecha;
-    });
+    if (dia <= 15) {
+      return {
+        año,
+        mes,
+        quincena: 1,
+        primerDia: 1,
+        ultimoDia: Math.min(15, ultimoDia),
+      };
+    }
+
+    return {
+      año,
+      mes,
+      quincena: 2,
+      primerDia: 16,
+      ultimoDia,
+    };
+  };
+
+
+  /* =====================================================
+     NORMALIZAR FECHA INICIAL
+  ===================================================== */
+
+  const informacionQuincena = useMemo(() => {
+    return obtenerInformacionQuincena(
+      fechaInicio
+    );
   }, [fechaInicio]);
 
+
+  /* =====================================================
+     CREAR DÍAS REALES DE LA QUINCENA
+  ===================================================== */
+
+  const dias = useMemo(() => {
+    const {
+      año,
+      mes,
+      primerDia,
+      ultimoDia,
+    } = informacionQuincena;
+
+    const cantidadDias =
+      ultimoDia - primerDia + 1;
+
+    return Array.from(
+      { length: cantidadDias },
+      (_, indice) => {
+        const fecha = new Date(
+          año,
+          mes,
+          primerDia + indice
+        );
+
+        fecha.setHours(
+          0,
+          0,
+          0,
+          0
+        );
+
+        return fecha;
+      }
+    );
+  }, [informacionQuincena]);
+
+
+  /* =====================================================
+     CLAVE DE FECHA
+  ===================================================== */
+
   const obtenerClaveFecha = (fecha) => {
-    const year = fecha.getFullYear();
+    const year =
+      fecha.getFullYear();
 
     const month = String(
       fecha.getMonth() + 1
@@ -38,57 +112,167 @@ function Calendario({
     return `${year}-${month}-${day}`;
   };
 
+
+  /* =====================================================
+     ES HOY
+  ===================================================== */
+
   const esHoy = (fecha) => {
     const hoy = new Date();
 
-    hoy.setHours(0, 0, 0, 0);
+    hoy.setHours(
+      0,
+      0,
+      0,
+      0
+    );
 
     return (
-      hoy.getFullYear() === fecha.getFullYear() &&
-      hoy.getMonth() === fecha.getMonth() &&
-      hoy.getDate() === fecha.getDate()
+      hoy.getFullYear() ===
+        fecha.getFullYear() &&
+      hoy.getMonth() ===
+        fecha.getMonth() &&
+      hoy.getDate() ===
+        fecha.getDate()
     );
   };
 
+
+  /* =====================================================
+     NOMBRE DEL DÍA
+  ===================================================== */
+
   const nombreDia = (fecha) => {
     return fecha
-      .toLocaleDateString("es-CO", {
-        weekday: "short",
-      })
+      .toLocaleDateString(
+        "es-CO",
+        {
+          weekday: "short",
+        }
+      )
       .replace(".", "")
       .toUpperCase();
   };
 
-  const cambiarPeriodo = (cantidad) => {
+
+  /* =====================================================
+     NOMBRE DEL MES
+  ===================================================== */
+
+  const nombreMes = useMemo(() => {
+    const fecha = new Date(
+      informacionQuincena.año,
+      informacionQuincena.mes,
+      1
+    );
+
+    return fecha
+      .toLocaleDateString(
+        "es-CO",
+        {
+          month: "long",
+          year: "numeric",
+        }
+      )
+      .toUpperCase();
+  }, [informacionQuincena]);
+
+
+  /* =====================================================
+     TEXTO DE LA QUINCENA
+  ===================================================== */
+
+  const textoQuincena =
+    informacionQuincena.quincena === 1
+      ? `PRIMERA QUINCENA · 1 — ${informacionQuincena.ultimoDia}`
+      : `SEGUNDA QUINCENA · 16 — ${informacionQuincena.ultimoDia}`;
+
+
+  /* =====================================================
+     CAMBIAR QUINCENA
+  ===================================================== */
+
+  const cambiarPeriodo = (
+    cantidad
+  ) => {
     setFechaInicio((actual) => {
-      const nueva = new Date(actual);
+      const informacion =
+        obtenerInformacionQuincena(
+          actual
+        );
 
-      nueva.setDate(
-        actual.getDate() + cantidad * 15
+      let nuevoMes =
+        informacion.mes;
+
+      let nuevoAño =
+        informacion.año;
+
+      let nuevaQuincena =
+        informacion.quincena +
+        cantidad;
+
+      if (nuevaQuincena > 2) {
+        nuevaQuincena = 1;
+        nuevoMes++;
+
+        if (nuevoMes > 11) {
+          nuevoMes = 0;
+          nuevoAño++;
+        }
+      }
+
+      if (nuevaQuincena < 1) {
+        nuevaQuincena = 2;
+        nuevoMes--;
+
+        if (nuevoMes < 0) {
+          nuevoMes = 11;
+          nuevoAño--;
+        }
+      }
+
+      const nuevoDia =
+        nuevaQuincena === 1
+          ? 1
+          : 16;
+
+      return new Date(
+        nuevoAño,
+        nuevoMes,
+        nuevoDia
       );
-
-      return nueva;
     });
   };
+
+
+  /* =====================================================
+     IR A LA QUINCENA ACTUAL
+  ===================================================== */
 
   const irHoy = () => {
     const fecha = new Date();
 
-    fecha.setHours(0, 0, 0, 0);
+    fecha.setHours(
+      0,
+      0,
+      0,
+      0
+    );
 
-    const dia = fecha.getDay();
-
-    const diferencia =
-      dia === 0
-        ? -6
-        : 1 - dia;
+    const dia =
+      fecha.getDate();
 
     fecha.setDate(
-      fecha.getDate() + diferencia
+      dia <= 15 ? 1 : 16
     );
 
     setFechaInicio(fecha);
   };
+
+
+  /* =====================================================
+     OBTENER TURNO
+  ===================================================== */
 
   const obtenerTurno = (
     fecha,
@@ -104,12 +288,22 @@ function Calendario({
     );
   };
 
-  const esTurnoDia = (turno) => {
-    if (!turno) return false;
 
-    const valor = String(turno)
-      .trim()
-      .toLowerCase();
+  /* =====================================================
+     SABER SI ES TURNO DE DÍA
+  ===================================================== */
+
+  const esTurnoDia = (
+    turno
+  ) => {
+    if (!turno) {
+      return false;
+    }
+
+    const valor =
+      String(turno)
+        .trim()
+        .toLowerCase();
 
     return (
       valor === "dia" ||
@@ -117,11 +311,18 @@ function Calendario({
     );
   };
 
+
+  /* =====================================================
+     SELECCIONAR CELDA
+  ===================================================== */
+
   const seleccionarCelda = (
     fecha,
     trabajador
   ) => {
-    if (!puedeEditar) return;
+    if (!puedeEditar) {
+      return;
+    }
 
     if (
       typeof onSeleccionarTurno ===
@@ -134,11 +335,18 @@ function Calendario({
     }
   };
 
+
+  /* =====================================================
+     ELIMINAR CELDA
+  ===================================================== */
+
   const eliminarCelda = async (
     fecha,
     trabajador
   ) => {
-    if (!puedeEditar) return;
+    if (!puedeEditar) {
+      return;
+    }
 
     if (
       typeof onEliminarTurno ===
@@ -151,12 +359,19 @@ function Calendario({
     }
   };
 
+
+  /* =====================================================
+     CONFIRMAR ELIMINACIÓN
+  ===================================================== */
+
   const confirmarEliminar = (
     fecha,
     trabajador,
     turno
   ) => {
-    if (!puedeEditar) return;
+    if (!puedeEditar) {
+      return;
+    }
 
     const nombreTurno =
       esTurnoDia(turno)
@@ -183,7 +398,9 @@ function Calendario({
           `Esta acción eliminará el turno de la programación.`
       );
 
-    if (!confirmar) return;
+    if (!confirmar) {
+      return;
+    }
 
     eliminarCelda(
       fecha,
@@ -191,18 +408,28 @@ function Calendario({
     );
   };
 
+
+  /* =====================================================
+     RENDER
+  ===================================================== */
+
   return (
     <>
       <div className="calendario-header">
 
         <div>
+
           <span className="calendario-label">
             PROGRAMACIÓN QUINCENAL
           </span>
 
           <h3>
-            Calendario de turnos
+            {nombreMes}
           </h3>
+
+          <p>
+            {textoQuincena}
+          </p>
 
           <p>
             {puedeEditar
@@ -210,7 +437,9 @@ function Calendario({
               : "Consulta los turnos programados del personal de la obra."
             }
           </p>
+
         </div>
+
 
         <div className="calendario-actions">
 
@@ -222,17 +451,19 @@ function Calendario({
             Hoy
           </button>
 
+
           <button
             type="button"
             className="btn-arrow"
             onClick={() =>
               cambiarPeriodo(-1)
             }
-            title="Período anterior"
-            aria-label="Período anterior"
+            title="Quincena anterior"
+            aria-label="Quincena anterior"
           >
             ‹
           </button>
+
 
           <button
             type="button"
@@ -240,8 +471,8 @@ function Calendario({
             onClick={() =>
               cambiarPeriodo(1)
             }
-            title="Período siguiente"
-            aria-label="Período siguiente"
+            title="Siguiente quincena"
+            aria-label="Siguiente quincena"
           >
             ›
           </button>
@@ -249,6 +480,7 @@ function Calendario({
         </div>
 
       </div>
+
 
       <div className="calendar-container">
 
@@ -258,7 +490,9 @@ function Calendario({
             PERSONAL / DÍAS
           </div>
 
+
           {dias.map((fecha) => (
+
             <div
               className={`day-header ${
                 esHoy(fecha)
@@ -285,7 +519,9 @@ function Calendario({
               )}
 
             </div>
+
           ))}
+
 
           {trabajadores.map(
             (trabajador) => (
@@ -305,6 +541,7 @@ function Calendario({
                       "?"}
                   </div>
 
+
                   <div>
 
                     <strong>
@@ -320,73 +557,78 @@ function Calendario({
 
                 </div>
 
-                {dias.map((fecha) => {
 
-                  const turno =
-                    obtenerTurno(
-                      fecha,
-                      trabajador
+                {dias.map(
+                  (fecha) => {
+
+                    const turno =
+                      obtenerTurno(
+                        fecha,
+                        trabajador
+                      );
+
+                    const clave =
+                      `${trabajador.id}-${obtenerClaveFecha(
+                        fecha
+                      )}`;
+
+                    return (
+
+                      <div
+                        className={`shift-cell ${
+                          esHoy(fecha)
+                            ? "today-cell"
+                            : ""
+                        }`}
+                        key={clave}
+                      >
+
+                        {turno ? (
+
+                          <TurnoCard
+                            tipo={turno}
+                            onClick={() =>
+                              confirmarEliminar(
+                                fecha,
+                                trabajador,
+                                turno
+                              )
+                            }
+                          />
+
+                        ) : (
+
+                          <button
+                            type="button"
+                            className={`free-cell ${
+                              !puedeEditar
+                                ? "view-only"
+                                : ""
+                            }`}
+                            onClick={() =>
+                              seleccionarCelda(
+                                fecha,
+                                trabajador
+                              )
+                            }
+                            title={
+                              puedeEditar
+                                ? "Asignar turno"
+                                : "Día libre"
+                            }
+                          >
+                            {puedeEditar
+                              ? "+"
+                              : "—"}
+                          </button>
+
+                        )}
+
+                      </div>
+
                     );
-
-                  const clave =
-                    `${trabajador.id}-${obtenerClaveFecha(
-                      fecha
-                    )}`;
-
-                  return (
-                    <div
-                      className={`shift-cell ${
-                        esHoy(fecha)
-                          ? "today-cell"
-                          : ""
-                      }`}
-                      key={clave}
-                    >
-
-                      {turno ? (
-
-                        <TurnoCard
-                          tipo={turno}
-                          onClick={() =>
-                            confirmarEliminar(
-                              fecha,
-                              trabajador,
-                              turno
-                            )
-                          }
-                        />
-
-                      ) : (
-
-                        <button
-                          type="button"
-                          className={`free-cell ${
-                            !puedeEditar
-                              ? "view-only"
-                              : ""
-                          }`}
-                          onClick={() =>
-                            seleccionarCelda(
-                              fecha,
-                              trabajador
-                            )
-                          }
-                          title={
-                            puedeEditar
-                              ? "Asignar turno"
-                              : "Día libre"
-                          }
-                        >
-                          {puedeEditar
-                            ? "+"
-                            : "—"}
-                        </button>
-
-                      )}
-
-                    </div>
-                  );
-                })}
+                  }
+                )}
 
               </div>
 
