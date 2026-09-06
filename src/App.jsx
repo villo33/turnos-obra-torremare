@@ -18,6 +18,7 @@ import {
   obtenerConfirmacionesTrabajador,
   suscribirseANotificaciones,
   marcarNotificacionLeida,
+  registrarSuscripcionPush,
 } from "./services/notificacionesService";
 
 
@@ -260,6 +261,57 @@ function App() {
 
   }, []);
 
+    /* =====================================================
+     REGISTRAR NOTIFICACIONES PUSH DEL TELÉFONO
+     
+     IMPORTANTE:
+     - NO reemplaza la campanita.
+     - La campanita sigue funcionando igual.
+     - Esto solamente permite recibir notificaciones
+       directamente en el teléfono.
+  ===================================================== */
+
+  useEffect(() => {
+
+    if (
+      !sesion?.user?.id ||
+      !perfil
+    ) {
+      return;
+    }
+
+    const registrarPush = async () => {
+
+      try {
+
+        console.log(
+          "📲 Registrando notificaciones Push para:",
+          sesion.user.id
+        );
+
+        await registrarSuscripcionPush();
+
+        console.log(
+          "✅ Registro Push terminado."
+        );
+
+      } catch (error) {
+
+        console.error(
+          "❌ Error registrando notificaciones Push:",
+          error
+        );
+
+      }
+
+    };
+
+    registrarPush();
+
+  }, [
+    sesion?.user?.id,
+    perfil
+  ]);
 
   /* =====================================================
      CARGAR TRABAJADORES
