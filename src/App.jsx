@@ -17,6 +17,7 @@ import {
   confirmarRecepcionHorario,
   obtenerConfirmacionesTrabajador,
   suscribirseANotificaciones,
+  marcarNotificacionLeida,
 } from "./services/notificacionesService";
 
 
@@ -48,6 +49,9 @@ function App() {
     useState(false);
 
   const [confirmandoNotificacion, setConfirmandoNotificacion] =
+    useState(null);
+
+  const [aceptandoNotificacion, setAceptandoNotificacion] =
     useState(null);
 
   const [notificacionesConfirmadas, setNotificacionesConfirmadas] =
@@ -95,6 +99,7 @@ function App() {
         "Error obteniendo perfil:",
         error
       );
+
 
       await supabase.auth.signOut();
 
@@ -236,6 +241,8 @@ function App() {
 
           setConfirmandoNotificacion(null);
 
+          setAceptandoNotificacion(null);
+
         }
 
       }
@@ -292,6 +299,7 @@ function App() {
           "Error cargando trabajadores:",
           error
         );
+
 
       } finally {
 
@@ -439,16 +447,46 @@ function App() {
           perfil.rol === "admin"
         ) {
 
+          /*
+           * IMPORTANTE:
+           *
+           * El administrador SOLO recibe sus propias
+           * notificaciones.
+           *
+           * Y solamente mostramos las que todavía están
+           * pendientes.
+           *
+           * NUNCA se marca automáticamente como leída.
+           */
+
+          const notificacionesAdmin =
+            (datos || []).filter(
+
+              (notificacion) =>
+
+                String(
+                  notificacion.trabajador_id
+                ) ===
+                String(
+                  sesion.user.id
+                ) &&
+
+                notificacion.leida !== true
+
+            );
+
+
           setNotificaciones(
-            datos || []
+            notificacionesAdmin
           );
+
 
           setNotificacionesConfirmadas([]);
 
 
           console.log(
-            "🔔 NOTIFICACIONES ADMIN:",
-            datos
+            "🔔 NOTIFICACIONES ADMIN PENDIENTES:",
+            notificacionesAdmin
           );
 
 
@@ -494,6 +532,32 @@ function App() {
 
 
         /* =================================================
+           GUARDAR UUID DE CONFIRMACIONES
+        ================================================= */
+
+        const idsConfirmados =
+          (confirmaciones || [])
+
+            .filter(
+              (confirmacion) =>
+                confirmacion.confirmado === true &&
+                confirmacion.notificacion_id
+            )
+
+            .map(
+              (confirmacion) =>
+                String(
+                  confirmacion.notificacion_id
+                )
+            );
+
+
+        setNotificacionesConfirmadas(
+          idsConfirmados
+        );
+
+
+        /* =================================================
            FILTRAR NOTIFICACIONES
         ================================================= */
 
@@ -521,44 +585,37 @@ function App() {
 
 
               /* ===========================================
-                 VERIFICAR SI YA FUE CONFIRMADA
-
-                 IMPORTANTE:
-                 notificacion.id = UUID
-                 notificacion_id = UUID
+                 SI YA FUE CONFIRMADA NO MOSTRARLA
               =========================================== */
 
+              const yaConfirmada =
+                idsConfirmados.includes(
+                  String(
+                    notificacion.id
+                  )
+                );
+
+
               if (
-                notificacion.tipo ===
-                "horario"
+                yaConfirmada
               ) {
 
-                const yaConfirmada =
-                  (confirmaciones || []).some(
+                return false;
 
-                    (confirmacion) =>
-
-                      confirmacion.confirmado === true &&
-
-                      confirmacion.notificacion_id &&
-
-                      String(
-                        confirmacion.notificacion_id
-                      ) ===
-                      String(
-                        notificacion.id
-                      )
-
-                  );
+              }
 
 
-                if (
-                  yaConfirmada
-                ) {
+              /*
+               * Si una notificación de trabajador ya fue
+               * marcada como leída por otra acción, tampoco
+               * debe volver a aparecer.
+               */
 
-                  return false;
+              if (
+                notificacion.leida === true
+              ) {
 
-                }
+                return false;
 
               }
 
@@ -572,30 +629,6 @@ function App() {
 
         setNotificaciones(
           notificacionesActivas
-        );
-
-
-        /* =================================================
-           GUARDAR UUID DE CONFIRMACIONES
-        ================================================= */
-
-        setNotificacionesConfirmadas(
-
-          (confirmaciones || [])
-
-            .filter(
-              (confirmacion) =>
-                confirmacion.confirmado === true &&
-                confirmacion.notificacion_id
-            )
-
-            .map(
-              (confirmacion) =>
-                String(
-                  confirmacion.notificacion_id
-                )
-            )
-
         );
 
 
@@ -667,6 +700,12 @@ function App() {
           }
 
 
+          console.log(
+            "📩 NUEVA NOTIFICACIÓN RECIBIDA EN TIEMPO REAL:",
+            nuevaNotificacion
+          );
+
+
           /* =============================================
              TRABAJADOR
           ============================================= */
@@ -682,6 +721,20 @@ function App() {
               String(
                 sesion.user.id
               )
+            ) {
+
+              return;
+
+            }
+
+
+            /*
+             * Si por alguna razón llega una notificación
+             * marcada como leída, no la mostramos.
+             */
+
+            if (
+              nuevaNotificacion.leida === true
             ) {
 
               return;
@@ -733,6 +786,39 @@ function App() {
           /* =============================================
              ADMINISTRADOR
           ============================================= */
+
+          if (
+            String(
+              nuevaNotificacion.trabajador_id
+            ) !==
+            String(
+              sesion.user.id
+            )
+          ) {
+
+            return;
+
+          }
+
+
+          /*
+           * MUY IMPORTANTE:
+           *
+           * El administrador solamente agrega
+           * notificaciones nuevas y pendientes.
+           *
+           * NO se ejecuta ninguna función para marcarlas
+           * como leídas aquí.
+           */
+
+          if (
+            nuevaNotificacion.leida === true
+          ) {
+
+            return;
+
+          }
+
 
           setNotificaciones(
             (anteriores) => {
@@ -938,11 +1024,126 @@ function App() {
 
     setConfirmandoNotificacion(null);
 
+    setAceptandoNotificacion(null);
+
   };
 
 
   /* =====================================================
-     CONFIRMAR NOTIFICACIÓN
+     ACEPTAR NOTIFICACIÓN DEL ADMINISTRADOR
+  ===================================================== */
+
+  const aceptarNotificacionAdmin = async (
+    notificacion
+  ) => {
+
+    if (
+      !notificacion?.id
+    ) {
+
+      return;
+
+    }
+
+
+    if (
+      String(
+        aceptandoNotificacion
+      ) ===
+      String(
+        notificacion.id
+      )
+    ) {
+
+      return;
+
+    }
+
+
+    try {
+
+      setAceptandoNotificacion(
+        String(
+          notificacion.id
+        )
+      );
+
+
+      console.log(
+        "🟢 ADMIN ACEPTANDO NOTIFICACIÓN:",
+        notificacion
+      );
+
+
+      /* ================================================
+         GUARDAR COMO LEÍDA EN SUPABASE
+      ================================================ */
+
+      await marcarNotificacionLeida(
+        String(
+          notificacion.id
+        )
+      );
+
+
+      console.log(
+        "✅ NOTIFICACIÓN MARCADA COMO LEÍDA"
+      );
+
+
+      /* ================================================
+         QUITARLA INMEDIATAMENTE DE LA PANTALLA
+      ================================================ */
+
+      setNotificaciones(
+        (anteriores) =>
+
+          anteriores.filter(
+
+            (actual) =>
+
+              String(
+                actual.id
+              ) !==
+              String(
+                notificacion.id
+              )
+
+          )
+
+      );
+
+
+      console.log(
+        "✅ NOTIFICACIÓN ADMIN ACEPTADA"
+      );
+
+
+    } catch (error) {
+
+      console.error(
+        "❌ ERROR ACEPTANDO NOTIFICACIÓN:",
+        error
+      );
+
+
+      alert(
+        "No se pudo aceptar la notificación."
+      );
+
+    } finally {
+
+      setAceptandoNotificacion(
+        null
+      );
+
+    }
+
+  };
+
+
+  /* =====================================================
+     CONFIRMAR NOTIFICACIÓN DEL TRABAJADOR
   ===================================================== */
 
   const confirmarNotificacion = async (
@@ -998,8 +1199,12 @@ function App() {
 
 
       if (
-        confirmandoNotificacion ===
-        notificacion.id
+        String(
+          confirmandoNotificacion
+        ) ===
+        String(
+          notificacion.id
+        )
       ) {
 
         return;
@@ -1048,7 +1253,9 @@ function App() {
       ================================================= */
 
       setConfirmandoNotificacion(
-        notificacion.id
+        String(
+          notificacion.id
+        )
       );
 
 
@@ -1406,8 +1613,39 @@ function App() {
     );
 
 
+  /* =====================================================
+     NOTIFICACIONES VISIBLES
+  ===================================================== */
+
+  const notificacionesVisibles =
+    esAdministradorSeguro(
+      perfil
+    )
+
+      ? notificaciones.filter(
+
+          (notificacion) =>
+
+            String(
+              notificacion.trabajador_id
+            ) ===
+            String(
+              sesion?.user?.id
+            ) &&
+
+            notificacion.leida !== true
+
+        )
+
+      : misNotificaciones;
+
+
+  /* =====================================================
+     NOTIFICACIONES NO LEÍDAS
+  ===================================================== */
+
   const notificacionesNoLeidas =
-    misNotificaciones.filter(
+    notificacionesVisibles.filter(
 
       (notificacion) =>
 
@@ -1776,7 +2014,10 @@ function App() {
                         }}
                       >
 
-                        Avisos de tu programación
+                        {esAdministrador
+                          ? "Confirmaciones de los trabajadores"
+                          : "Avisos de tu programación"
+                        }
 
                       </span>
 
@@ -1827,73 +2068,7 @@ function App() {
                     }}
                   >
 
-                    {esAdministrador ? (
-
-                      <div
-                        style={{
-                          padding:
-                            "28px 20px",
-
-                          textAlign:
-                            "center",
-
-                          color:
-                            "#667085",
-                        }}
-                      >
-
-                        <div
-                          style={{
-                            fontSize:
-                              "28px",
-
-                            marginBottom:
-                              "8px",
-                          }}
-                        >
-
-                          🔔
-
-                        </div>
-
-
-                        <strong
-                          style={{
-                            display:
-                              "block",
-
-                            color:
-                              "#344054",
-                          }}
-                        >
-
-                          Notificaciones
-
-                        </strong>
-
-
-                        <p
-                          style={{
-                            margin:
-                              "6px 0 0",
-
-                            fontSize:
-                              "13px",
-
-                            lineHeight:
-                              "1.5",
-                          }}
-                        >
-
-                          Aquí aparecerán las
-                          confirmaciones de los
-                          trabajadores.
-
-                        </p>
-
-                      </div>
-
-                    ) : misNotificaciones.length === 0 ? (
+                    {notificacionesVisibles.length === 0 ? (
 
                       <div
                         style={{
@@ -1918,7 +2093,10 @@ function App() {
                           }}
                         >
 
-                          ✓
+                          {esAdministrador
+                            ? "🔔"
+                            : "✓"
+                          }
 
                         </div>
 
@@ -1933,7 +2111,10 @@ function App() {
                           }}
                         >
 
-                          No tienes notificaciones
+                          {esAdministrador
+                            ? "No hay notificaciones"
+                            : "No tienes notificaciones"
+                          }
 
                         </strong>
 
@@ -1945,11 +2126,19 @@ function App() {
 
                             fontSize:
                               "13px",
+
+                            lineHeight:
+                              "1.5",
                           }}
                         >
 
-                          Aquí aparecerán los
-                          avisos de tus turnos.
+                          {esAdministrador
+
+                            ? "Aquí aparecerán las confirmaciones de los trabajadores."
+
+                            : "Aquí aparecerán los avisos de tus turnos."
+
+                          }
 
                         </p>
 
@@ -1957,14 +2146,12 @@ function App() {
 
                     ) : (
 
-                      misNotificaciones.map(
+                      notificacionesVisibles.map(
 
                         (notificacion) => {
 
                           /* =================================
                              ID DE NOTIFICACIÓN = UUID
-
-                             NO USAR Number()
                           ================================= */
 
                           const idNotificacion =
@@ -1977,6 +2164,18 @@ function App() {
                             notificacionesConfirmadas.includes(
                               idNotificacion
                             );
+
+
+                          const esConfirmacionAdmin =
+                            notificacion.tipo ===
+                            "confirmacion_horario";
+
+
+                          const estaAceptando =
+                            String(
+                              aceptandoNotificacion
+                            ) ===
+                            idNotificacion;
 
 
                           return (
@@ -2033,9 +2232,11 @@ function App() {
                                       "10px",
 
                                     background:
-                                      confirmada
+                                      esConfirmacionAdmin
                                         ? "#ecfdf3"
-                                        : "#eef4ff",
+                                        : confirmada
+                                          ? "#ecfdf3"
+                                          : "#eef4ff",
 
                                     display:
                                       "flex",
@@ -2053,9 +2254,11 @@ function App() {
                                 >
 
                                   {
-                                    confirmada
+                                    esConfirmacionAdmin
                                       ? "✅"
-                                      : "🔔"
+                                      : confirmada
+                                        ? "✅"
+                                        : "🔔"
                                   }
 
                                 </div>
@@ -2081,7 +2284,12 @@ function App() {
                                   >
 
                                     {
-                                      notificacion.titulo
+                                      notificacion.titulo ||
+                                      (
+                                        esConfirmacionAdmin
+                                          ? "Horario confirmado"
+                                          : "Nueva notificación"
+                                      )
                                     }
 
                                   </strong>
@@ -2104,7 +2312,12 @@ function App() {
                                   >
 
                                     {
-                                      notificacion.mensaje
+                                      notificacion.mensaje ||
+                                      (
+                                        esConfirmacionAdmin
+                                          ? "Un trabajador ha confirmado el horario asignado."
+                                          : "Tienes una nueva notificación."
+                                      )
                                     }
 
                                   </p>
@@ -2148,47 +2361,20 @@ function App() {
                                   )}
 
 
-                                  {notificacion.tipo === "horario" && (
+                                  {/* =================================
+                                      BOTÓN PARA ADMINISTRADOR
+                                  ================================= */}
 
-                                    <div
-                                      style={{
-                                        marginTop:
-                                          "12px",
-                                      }}
-                                    >
+                                  {esAdministrador &&
+                                    esConfirmacionAdmin &&
+                                    !notificacion.leida && (
 
-                                      {confirmada ? (
-
-                                        <div
-                                          style={{
-                                            padding:
-                                              "9px 12px",
-
-                                            borderRadius:
-                                              "8px",
-
-                                            background:
-                                              "#ecfdf3",
-
-                                            color:
-                                              "#027a48",
-
-                                            fontSize:
-                                              "12px",
-
-                                            fontWeight:
-                                              "600",
-
-                                            border:
-                                              "1px solid #abefc6",
-                                          }}
-                                        >
-
-                                          ✅ Recepción confirmada
-
-                                        </div>
-
-                                      ) : (
+                                      <div
+                                        style={{
+                                          marginTop:
+                                            "12px",
+                                        }}
+                                      >
 
                                         <button
 
@@ -2200,15 +2386,14 @@ function App() {
 
                                             e.stopPropagation();
 
-                                            confirmarNotificacion(
+                                            aceptarNotificacionAdmin(
                                               notificacion
                                             );
 
                                           }}
 
                                           disabled={
-                                            confirmandoNotificacion ===
-                                            idNotificacion
+                                            estaAceptando
                                           }
 
                                           style={{
@@ -2226,12 +2411,9 @@ function App() {
                                               "10px 12px",
 
                                             background:
-                                              confirmandoNotificacion ===
-                                              idNotificacion
-
+                                              estaAceptando
                                                 ? "#98a2b3"
-
-                                                : "#175cd3",
+                                                : "#027a48",
 
                                             color:
                                               "#fff",
@@ -2243,11 +2425,8 @@ function App() {
                                               "700",
 
                                             cursor:
-                                              confirmandoNotificacion ===
-                                              idNotificacion
-
+                                              estaAceptando
                                                 ? "not-allowed"
-
                                                 : "pointer",
 
                                             position:
@@ -2260,22 +2439,164 @@ function App() {
 
                                         >
 
-                                          {
-                                            confirmandoNotificacion ===
-                                            idNotificacion
+                                          {estaAceptando
 
-                                              ? "Confirmando..."
+                                            ? "Aceptando..."
 
-                                              : "✅ Confirmar recepción"
+                                            : "✓ Aceptar"
+
                                           }
 
                                         </button>
 
-                                      )}
+                                      </div>
 
-                                    </div>
+                                    )}
 
-                                  )}
+
+                                  {/* =================================
+                                      BOTÓN SOLO PARA HORARIOS
+                                      DEL TRABAJADOR
+                                  ================================= */}
+
+                                  {!esAdministrador &&
+                                    notificacion.tipo ===
+                                    "horario" && (
+
+                                      <div
+                                        style={{
+                                          marginTop:
+                                            "12px",
+                                        }}
+                                      >
+
+                                        {confirmada ? (
+
+                                          <div
+                                            style={{
+                                              padding:
+                                                "9px 12px",
+
+                                              borderRadius:
+                                                "8px",
+
+                                              background:
+                                                "#ecfdf3",
+
+                                              color:
+                                                "#027a48",
+
+                                              fontSize:
+                                                "12px",
+
+                                              fontWeight:
+                                                "600",
+
+                                              border:
+                                                "1px solid #abefc6",
+                                            }}
+                                          >
+
+                                            ✅ Recepción confirmada
+
+                                          </div>
+
+                                        ) : (
+
+                                          <button
+
+                                            type="button"
+
+                                            onClick={(e) => {
+
+                                              e.preventDefault();
+
+                                              e.stopPropagation();
+
+                                              confirmarNotificacion(
+                                                notificacion
+                                              );
+
+                                            }}
+
+                                            disabled={
+                                              String(
+                                                confirmandoNotificacion
+                                              ) ===
+                                              idNotificacion
+                                            }
+
+                                            style={{
+
+                                              width:
+                                                "100%",
+
+                                              border:
+                                                "none",
+
+                                              borderRadius:
+                                                "8px",
+
+                                              padding:
+                                                "10px 12px",
+
+                                              background:
+                                                String(
+                                                  confirmandoNotificacion
+                                                ) ===
+                                                idNotificacion
+
+                                                  ? "#98a2b3"
+
+                                                  : "#175cd3",
+
+                                              color:
+                                                "#fff",
+
+                                              fontSize:
+                                                "12px",
+
+                                              fontWeight:
+                                                "700",
+
+                                              cursor:
+                                                String(
+                                                  confirmandoNotificacion
+                                                ) ===
+                                                idNotificacion
+
+                                                  ? "not-allowed"
+
+                                                  : "pointer",
+
+                                              position:
+                                                "relative",
+
+                                              zIndex:
+                                                1001,
+
+                                            }}
+
+                                          >
+
+                                            {
+                                              String(
+                                                confirmandoNotificacion
+                                              ) ===
+                                              idNotificacion
+
+                                                ? "Confirmando..."
+
+                                                : "✅ Confirmar recepción"
+                                            }
+
+                                          </button>
+
+                                        )}
+
+                                      </div>
+
+                                    )}
 
                                 </div>
 
@@ -2384,6 +2705,17 @@ function App() {
     </div>
 
   );
+
+}
+
+
+/* =====================================================
+   FUNCIÓN AUXILIAR
+===================================================== */
+
+function esAdministradorSeguro(perfil) {
+
+  return perfil?.rol === "admin";
 
 }
 

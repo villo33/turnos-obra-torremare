@@ -131,7 +131,7 @@ export async function contarNotificacionesNoLeidas() {
 
 
 /* =====================================================
-   CREAR NOTIFICACIÓN DE HORARIO
+   CREAR NOTIFICACIÓN DE HORARIO AGRUPADA
 ===================================================== */
 
 export async function crearNotificacionHorario({
@@ -157,6 +157,13 @@ export async function crearNotificacionHorario({
   if (!trabajadorUUID) {
     throw new Error(
       "El user_id del trabajador no es válido."
+    );
+  }
+
+
+  if (!fechaTurno) {
+    throw new Error(
+      "Falta la fecha del turno."
     );
   }
 
@@ -279,83 +286,61 @@ export async function crearNotificacionHorario({
     nombreTrabajador ||
     "Trabajador";
 
-  let textoTurno =
-    "turno de trabajo";
-
-  if (tipo === "dia") {
-    textoTurno =
-      "turno de día";
-  }
-
-  if (tipo === "noche") {
-    textoTurno =
-      "turno de noche";
-  }
-
 
   /* -----------------------------------------------------
-     MENSAJE
+     LLAMAR FUNCIÓN SEGURA DE SUPABASE
+
+     La función:
+
+     - Crea una notificación si no existe una pendiente.
+     - Reutiliza la notificación pendiente.
+     - Evita una notificación independiente por cada día.
   ----------------------------------------------------- */
-
-  const mensaje = fechaTurno
-    ? `${nombre}, la administradora te ha asignado un ${textoTurno} para el ${fechaTurno}.`
-    : `${nombre}, la administradora ha actualizado tu horario de trabajo.`;
-
-
-  /* -----------------------------------------------------
-     DATOS DE LA NOTIFICACIÓN
-  ----------------------------------------------------- */
-
-  const datosNotificacion = {
-    trabajador_id:
-      trabajadorUUID,
-
-    tipo:
-      "horario",
-
-    titulo:
-      "Nuevo horario de trabajo",
-
-    mensaje:
-      mensaje,
-
-    leida:
-      false,
-
-    ...(fechaTurno
-      ? {
-          fecha_turno:
-            fechaTurno,
-        }
-      : {}),
-  };
-
 
   console.log(
-    "📨 DATOS QUE SE VAN A INSERTAR:",
-    datosNotificacion
+    "🔔 Creando/actualizando notificación agrupada..."
+  );
+
+  console.log(
+    "👤 Trabajador:",
+    nombre
+  );
+
+  console.log(
+    "🆔 UUID:",
+    trabajadorUUID
+  );
+
+  console.log(
+    "📅 Fecha:",
+    fechaTurno
+  );
+
+  console.log(
+    "📌 Tipo:",
+    tipo
   );
 
 
-  /* -----------------------------------------------------
-     INSERTAR NOTIFICACIÓN
-     
-     IMPORTANTE:
-     NO usamos .select() aquí.
-     
-     El administrador puede INSERTAR,
-     pero la política SELECT solamente
-     permite al trabajador ver su propia
-     notificación.
-  ----------------------------------------------------- */
-
   const {
+    data,
     error,
-  } = await supabase
-    .from("notificaciones")
-    .insert([
-      datosNotificacion,
-    ]);
+  } = await supabase.rpc(
+    "crear_notificacion_horario_agrupada",
+    {
+      p_trabajador_id:
+        trabajadorUUID,
+
+      p_fecha_turno:
+        fechaTurno,
+
+      p_tipo:
+        tipo,
+
+      p_nombre_trabajador:
+        nombre,
+    }
+  );
 
 
   /* -----------------------------------------------------
@@ -369,7 +354,7 @@ export async function crearNotificacionHorario({
     );
 
     console.error(
-      "❌ ERROR CREANDO NOTIFICACIÓN"
+      "❌ ERROR CREANDO NOTIFICACIÓN AGRUPADA"
     );
 
     console.error(
@@ -403,8 +388,8 @@ export async function crearNotificacionHorario({
     );
 
     console.error(
-      "📨 Datos enviados:",
-      datosNotificacion
+      "📅 Fecha:",
+      fechaTurno
     );
 
     console.error(
@@ -424,11 +409,16 @@ export async function crearNotificacionHorario({
   );
 
   console.log(
-    "✅ NOTIFICACIÓN CREADA CORRECTAMENTE"
+    "✅ NOTIFICACIÓN AGRUPADA CREADA/ACTUALIZADA"
   );
 
   console.log(
     "👤 Trabajador:",
+    nombre
+  );
+
+  console.log(
+    "🆔 UUID:",
     trabajadorUUID
   );
 
@@ -443,13 +433,16 @@ export async function crearNotificacionHorario({
   );
 
   console.log(
+    "📦 Resultado:",
+    data
+  );
+
+  console.log(
     "=========================================="
   );
 
 
-  return {
-    ...datosNotificacion,
-  };
+  return data;
 }
 
 
@@ -461,24 +454,107 @@ export async function marcarNotificacionLeida(
   notificacionId
 ) {
 
+  /* -----------------------------------------------------
+     VALIDAR ID
+  ----------------------------------------------------- */
+
   if (!notificacionId) {
+
     throw new Error(
       "Falta el ID de la notificación."
     );
+
   }
+
+
+  const id =
+    String(
+      notificacionId
+    ).trim();
+
+
+  if (!id) {
+
+    throw new Error(
+      "El ID de la notificación no es válido."
+    );
+
+  }
+
+
+  console.log(
+    "🔵 MARCANDO NOTIFICACIÓN COMO LEÍDA:",
+    id
+  );
+
+
+  /* -----------------------------------------------------
+     OBTENER USUARIO ACTUAL
+  ----------------------------------------------------- */
+
+  const {
+    data: sesionData,
+    error: errorSesion,
+  } = await supabase.auth.getSession();
+
+
+  if (errorSesion) {
+
+    console.error(
+      "❌ Error obteniendo sesión:",
+      errorSesion
+    );
+
+    throw errorSesion;
+
+  }
+
+
+  const usuario =
+    sesionData?.session?.user;
+
+
+  if (!usuario) {
+
+    throw new Error(
+      "No hay una sesión autenticada."
+    );
+
+  }
+
+
+  const usuarioUUID =
+    String(
+      usuario.id
+    ).trim();
+
+
+  /* -----------------------------------------------------
+     ACTUALIZAR SOLAMENTE LA NOTIFICACIÓN
+     DEL USUARIO ACTUAL
+  ----------------------------------------------------- */
 
   const {
     data,
     error,
   } = await supabase
+
     .from("notificaciones")
+
     .update({
       leida: true,
     })
+
     .eq(
       "id",
-      notificacionId
+      id
     )
+
+    .eq(
+      "trabajador_id",
+      usuarioUUID
+    )
+
     .select(`
       id,
       trabajador_id,
@@ -489,16 +565,81 @@ export async function marcarNotificacionLeida(
       fecha_turno,
       created_at
     `)
-    .single();
+
+    .maybeSingle();
+
 
   if (error) {
+
     console.error(
-      "❌ Error marcando notificación como leída:",
-      error
+      "=========================================="
+    );
+
+    console.error(
+      "❌ ERROR MARCANDO NOTIFICACIÓN COMO LEÍDA"
+    );
+
+    console.error(
+      "Código:",
+      error.code
+    );
+
+    console.error(
+      "Mensaje:",
+      error.message
+    );
+
+    console.error(
+      "Detalles:",
+      error.details
+    );
+
+    console.error(
+      "Hint:",
+      error.hint
+    );
+
+    console.error(
+      "ID:",
+      id
+    );
+
+    console.error(
+      "Usuario:",
+      usuarioUUID
+    );
+
+    console.error(
+      "=========================================="
     );
 
     throw error;
+
   }
+
+
+  /* -----------------------------------------------------
+     COMPROBAR QUE REALMENTE SE ACTUALIZÓ
+  ----------------------------------------------------- */
+
+  if (!data) {
+
+    console.error(
+      "❌ No se encontró una notificación perteneciente al usuario."
+    );
+
+    throw new Error(
+      "No se pudo marcar la notificación como leída."
+    );
+
+  }
+
+
+  console.log(
+    "✅ NOTIFICACIÓN MARCADA COMO LEÍDA:",
+    data
+  );
+
 
   return data;
 }
@@ -511,17 +652,63 @@ export async function marcarNotificacionLeida(
 export async function marcarTodasComoLeidas() {
 
   const {
+    data: sesionData,
+    error: errorSesion,
+  } = await supabase.auth.getSession();
+
+
+  if (errorSesion) {
+
+    console.error(
+      "❌ Error obteniendo sesión:",
+      errorSesion
+    );
+
+    throw errorSesion;
+
+  }
+
+
+  const usuario =
+    sesionData?.session?.user;
+
+
+  if (!usuario) {
+
+    throw new Error(
+      "No hay una sesión autenticada."
+    );
+
+  }
+
+
+  const usuarioUUID =
+    String(
+      usuario.id
+    ).trim();
+
+
+  const {
     data,
     error,
   } = await supabase
+
     .from("notificaciones")
+
     .update({
       leida: true,
     })
+
+    .eq(
+      "trabajador_id",
+      usuarioUUID
+    )
+
     .eq(
       "leida",
       false
     )
+
     .select(`
       id,
       trabajador_id,
@@ -533,7 +720,9 @@ export async function marcarTodasComoLeidas() {
       created_at
     `);
 
+
   if (error) {
+
     console.error(
       "❌ Error marcando todas las notificaciones:",
       error
@@ -541,6 +730,7 @@ export async function marcarTodasComoLeidas() {
 
     throw error;
   }
+
 
   return data || [];
 }
@@ -623,114 +813,199 @@ export async function confirmarRecepcionHorario({
 
 
   /* -----------------------------------------------------
-     NORMALIZAR UUID
+     NORMALIZAR DATOS
   ----------------------------------------------------- */
+
+  const trabajadorIdNumerico =
+    Number(trabajadorId);
 
   const idNotificacion =
     String(notificacionId).trim();
 
 
+  if (
+    !Number.isInteger(
+      trabajadorIdNumerico
+    ) ||
+    trabajadorIdNumerico <= 0
+  ) {
+    throw new Error(
+      "El ID numérico del trabajador no es válido."
+    );
+  }
+
+
+  console.log(
+    "=========================================="
+  );
+
+  console.log(
+    "🔔 CONFIRMANDO HORARIO"
+  );
+
+  console.log(
+    "🔢 Trabajador:",
+    trabajadorIdNumerico
+  );
+
+  console.log(
+    "🆔 Notificación:",
+    idNotificacion
+  );
+
+  console.log(
+    "📅 Fecha inicio:",
+    fechaInicio
+  );
+
+  console.log(
+    "📅 Fecha fin:",
+    fechaFin
+  );
+
+  console.log(
+    "=========================================="
+  );
+
+
   /* -----------------------------------------------------
-     COMPROBAR SI YA ESTÁ CONFIRMADA
+     OBTENER NOMBRE DEL TRABAJADOR
   ----------------------------------------------------- */
 
+  let nombreTrabajador =
+    "El trabajador";
+
+
   const {
-    data: existente,
-    error: errorExistente,
+    data: trabajador,
+    error: errorTrabajador,
   } = await supabase
-    .from("obra_confirmaciones_horario")
-    .select(`
-      id,
-      trabajador_id,
-      confirmado,
-      confirmado_at,
-      fecha_inicio,
-      fecha_fin,
-      notificacion_id
-    `)
+    .from("obra_trabajadores")
+    .select("nombre")
     .eq(
-      "trabajador_id",
-      trabajadorId
+      "id",
+      trabajadorIdNumerico
     )
-    .eq(
-      "notificacion_id",
-      idNotificacion
-    )
-    .eq(
-      "confirmado",
-      true
-    )
-    .limit(1);
+    .maybeSingle();
 
-  if (errorExistente) {
-    console.error(
-      "❌ Error comprobando confirmación existente:",
-      errorExistente
-    );
-
-    throw errorExistente;
-  }
 
   if (
-    existente &&
-    existente.length > 0
+    !errorTrabajador &&
+    trabajador?.nombre
   ) {
 
-    console.log(
-      "ℹ️ Esta notificación ya estaba confirmada:",
-      existente[0]
-    );
-
-    return existente[0];
+    nombreTrabajador =
+      trabajador.nombre;
   }
 
 
   /* -----------------------------------------------------
-     CREAR CONFIRMACIÓN
+     LLAMAR FUNCIÓN SEGURA DE SUPABASE
+
+     Esta función:
+
+     1. Guarda la confirmación.
+     2. Crea la notificación para la administradora.
+     3. Evita duplicados.
   ----------------------------------------------------- */
 
   const {
     data,
     error,
-  } = await supabase
-    .from("obra_confirmaciones_horario")
-    .insert({
-      trabajador_id:
-        trabajadorId,
+  } = await supabase.rpc(
+    "confirmar_horario_trabajador",
+    {
+      p_trabajador_id:
+        trabajadorIdNumerico,
 
-      notificacion_id:
+      p_notificacion_id:
         idNotificacion,
 
-      confirmado:
-        true,
-
-      confirmado_at:
-        new Date().toISOString(),
-
-      fecha_inicio:
+      p_fecha_inicio:
         fechaInicio,
 
-      fecha_fin:
+      p_fecha_fin:
         fechaFin,
-    })
-    .select()
-    .single();
+
+      p_nombre_trabajador:
+        nombreTrabajador,
+    }
+  );
+
+
+  /* -----------------------------------------------------
+     ERROR
+  ----------------------------------------------------- */
 
   if (error) {
+
     console.error(
-      "❌ Error confirmando recepción del horario:",
-      error
+      "=========================================="
+    );
+
+    console.error(
+      "❌ ERROR CONFIRMANDO HORARIO"
+    );
+
+    console.error(
+      "Código:",
+      error.code
+    );
+
+    console.error(
+      "Mensaje:",
+      error.message
+    );
+
+    console.error(
+      "Detalles:",
+      error.details
+    );
+
+    console.error(
+      "Hint:",
+      error.hint
+    );
+
+    console.error(
+      "=========================================="
     );
 
     throw error;
   }
 
+
+  /* -----------------------------------------------------
+     RESULTADO
+  ----------------------------------------------------- */
+
   console.log(
-    "✅ Horario confirmado correctamente:",
+    "=========================================="
+  );
+
+  console.log(
+    "✅ HORARIO CONFIRMADO"
+  );
+
+  console.log(
+    "📨 RESPUESTA ENVIADA A LA ADMINISTRADORA"
+  );
+
+  console.log(
+    "📦 Resultado:",
     data
   );
 
-  return data;
+  console.log(
+    "=========================================="
+  );
+
+
+  /* -----------------------------------------------------
+     DEVOLVER CONFIRMACIÓN
+  ----------------------------------------------------- */
+
+  return data?.confirmacion || data;
 }
 
 

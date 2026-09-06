@@ -197,6 +197,16 @@ function CalendarioPage({
         );
 
 
+      /*
+         Guardamos esta información antes de modificar
+         el turno para saber si realmente hubo un cambio.
+      */
+
+      const eraMismoTurno =
+        turnoExistente &&
+        turnoExistente.tipo === tipo;
+
+
       /* =================================================
          CREAR O ACTUALIZAR TURNO
       ================================================= */
@@ -231,96 +241,110 @@ function CalendarioPage({
 
       /* =================================================
          CREAR NOTIFICACIÓN PARA EL TRABAJADOR
-
-         IMPORTANTE:
-         El turno ya fue guardado correctamente.
-
-         La notificación se intenta crear después.
-         Si la notificación falla, el turno NO se pierde.
+         
+         SOLO SE ENVÍA SI:
+         
+         1. Es un turno nuevo.
+         2. Se cambió el tipo de turno.
+         
+         Si el administrador vuelve a pulsar el mismo
+         turno, no generamos una notificación innecesaria.
+         
+         La agrupación de varios días y la creación de
+         una nueva notificación después de una confirmación
+         se controla dentro de notificacionesService.js.
       ================================================= */
 
-      try {
+      if (!eraMismoTurno) {
 
-        const trabajador =
-          trabajadores.find(
-            (item) =>
-              String(item.id) ===
-              String(trabajadorId)
-          );
+        try {
+
+          const trabajador =
+            trabajadores.find(
+              (item) =>
+                String(item.id) ===
+                String(trabajadorId)
+            );
 
 
-        if (!trabajador) {
+          if (!trabajador) {
+
+            console.error(
+              "❌ No se encontró el trabajador seleccionado:",
+              trabajadorId
+            );
+
+          } else if (!trabajador.user_id) {
+
+            console.error(
+              "❌ El trabajador no tiene user_id:",
+              trabajador
+            );
+
+          } else {
+
+            console.log(
+              "👤 Trabajador para notificación:",
+              {
+                id: trabajador.id,
+                nombre: trabajador.nombre,
+                user_id: trabajador.user_id,
+              }
+            );
+
+
+            /* =============================================
+               LA AUTENTICACIÓN Y LA CREACIÓN DE LA
+               NOTIFICACIÓN SE MANEJAN EN EL SERVICE.
+               
+               NO USAMOS supabase DIRECTAMENTE AQUÍ.
+            ============================================= */
+
+            await crearNotificacionHorario({
+
+              trabajadorId:
+                trabajador.user_id,
+
+              fechaTurno:
+                fechaKey,
+
+              tipo:
+                tipo,
+
+              nombreTrabajador:
+                trabajador.nombre,
+
+            });
+
+
+            console.log(
+              "🔔 Notificación creada/actualizada correctamente para:",
+              trabajador.nombre
+            );
+          }
+
+        } catch (errorNotificacion) {
+
+          /*
+            MUY IMPORTANTE:
+
+            Si falla la notificación,
+            el turno ya está guardado.
+
+            Por eso NO lanzamos nuevamente
+            este error y NO eliminamos el turno.
+          */
 
           console.error(
-            "❌ No se encontró el trabajador seleccionado:",
-            trabajadorId
-          );
-
-        } else if (!trabajador.user_id) {
-
-          console.error(
-            "❌ El trabajador no tiene user_id:",
-            trabajador
-          );
-
-        } else {
-
-          console.log(
-            "👤 Trabajador para notificación:",
-            {
-              id: trabajador.id,
-              nombre: trabajador.nombre,
-              user_id: trabajador.user_id,
-            }
-          );
-
-
-          /* =============================================
-             LA AUTENTICACIÓN SE COMPRUEBA DENTRO DE
-             notificacionesService.js
-
-             NO USAMOS supabase AQUÍ PARA EVITAR
-             DUPLICAR LA LÓGICA.
-          ============================================= */
-
-          await crearNotificacionHorario({
-
-            trabajadorId:
-              trabajador.user_id,
-
-            fechaTurno:
-              fechaKey,
-
-            tipo:
-              tipo,
-
-            nombreTrabajador:
-              trabajador.nombre,
-
-          });
-
-
-          console.log(
-            "🔔 Notificación creada correctamente para:",
-            trabajador.nombre
+            "⚠️ El turno se guardó, pero no se pudo crear la notificación:",
+            errorNotificacion
           );
         }
 
-      } catch (errorNotificacion) {
+      } else {
 
-        /*
-          MUY IMPORTANTE:
-
-          Si falla la notificación,
-          el turno ya está guardado.
-
-          Por eso NO lanzamos nuevamente
-          este error y NO eliminamos el turno.
-        */
-
-        console.error(
-          "⚠️ El turno se guardó, pero no se pudo crear la notificación:",
-          errorNotificacion
+        console.log(
+          "ℹ️ El turno ya tenía el mismo tipo. No se creó una nueva notificación."
         );
       }
 
