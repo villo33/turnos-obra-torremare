@@ -18,7 +18,7 @@ import {
   obtenerConfirmacionesTrabajador,
   suscribirseANotificaciones,
   marcarNotificacionLeida,
-  registrarSuscripcionPush,
+  activarNotificacionesPush,
 } from "./services/notificacionesService";
 
 
@@ -289,7 +289,7 @@ function App() {
           sesion.user.id
         );
 
-        await registrarSuscripcionPush();
+        await activarNotificacionesPush();
 
         console.log(
           "✅ Registro Push terminado."
