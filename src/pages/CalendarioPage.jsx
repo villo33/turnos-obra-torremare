@@ -10,6 +10,11 @@ import {
   eliminarTurno as eliminarTurnoSupabase,
 } from "../services/turnosService";
 
+import {
+  crearNotificacionHorario,
+} from "../services/notificacionesService";
+
+
 function CalendarioPage({
   trabajadores = [],
   turnos = {},
@@ -175,6 +180,11 @@ function CalendarioPage({
         }
       );
 
+
+      /* =================================================
+         BUSCAR SI YA EXISTE EL TURNO
+      ================================================= */
+
       const turnosExistentes =
         await obtenerTurnos();
 
@@ -186,14 +196,31 @@ function CalendarioPage({
             turno.fecha === fechaKey
         );
 
+
+      /* =================================================
+         CREAR O ACTUALIZAR TURNO
+      ================================================= */
+
       if (turnoExistente) {
+
+        console.log(
+          "🔄 Actualizando turno existente:",
+          turnoExistente.id
+        );
+
         await actualizarTurno(
           turnoExistente.id,
           {
             tipo,
           }
         );
+
       } else {
+
+        console.log(
+          "➕ Creando nuevo turno"
+        );
+
         await crearTurno({
           trabajador_id: trabajadorId,
           fecha: fechaKey,
@@ -201,7 +228,106 @@ function CalendarioPage({
         });
       }
 
-      /* Actualizar inmediatamente el estado local */
+
+      /* =================================================
+         CREAR NOTIFICACIÓN PARA EL TRABAJADOR
+
+         IMPORTANTE:
+         El turno ya fue guardado correctamente.
+
+         La notificación se intenta crear después.
+         Si la notificación falla, el turno NO se pierde.
+      ================================================= */
+
+      try {
+
+        const trabajador =
+          trabajadores.find(
+            (item) =>
+              String(item.id) ===
+              String(trabajadorId)
+          );
+
+
+        if (!trabajador) {
+
+          console.error(
+            "❌ No se encontró el trabajador seleccionado:",
+            trabajadorId
+          );
+
+        } else if (!trabajador.user_id) {
+
+          console.error(
+            "❌ El trabajador no tiene user_id:",
+            trabajador
+          );
+
+        } else {
+
+          console.log(
+            "👤 Trabajador para notificación:",
+            {
+              id: trabajador.id,
+              nombre: trabajador.nombre,
+              user_id: trabajador.user_id,
+            }
+          );
+
+
+          /* =============================================
+             LA AUTENTICACIÓN SE COMPRUEBA DENTRO DE
+             notificacionesService.js
+
+             NO USAMOS supabase AQUÍ PARA EVITAR
+             DUPLICAR LA LÓGICA.
+          ============================================= */
+
+          await crearNotificacionHorario({
+
+            trabajadorId:
+              trabajador.user_id,
+
+            fechaTurno:
+              fechaKey,
+
+            tipo:
+              tipo,
+
+            nombreTrabajador:
+              trabajador.nombre,
+
+          });
+
+
+          console.log(
+            "🔔 Notificación creada correctamente para:",
+            trabajador.nombre
+          );
+        }
+
+      } catch (errorNotificacion) {
+
+        /*
+          MUY IMPORTANTE:
+
+          Si falla la notificación,
+          el turno ya está guardado.
+
+          Por eso NO lanzamos nuevamente
+          este error y NO eliminamos el turno.
+        */
+
+        console.error(
+          "⚠️ El turno se guardó, pero no se pudo crear la notificación:",
+          errorNotificacion
+        );
+      }
+
+
+      /* =================================================
+         ACTUALIZAR INMEDIATAMENTE EL ESTADO LOCAL
+      ================================================= */
 
       setTurnos((actuales) => ({
         ...actuales,
@@ -213,13 +339,20 @@ function CalendarioPage({
         },
       }));
 
+
+      /* =================================================
+         CERRAR MODAL
+      ================================================= */
+
       cerrarModal();
 
+
       console.log(
-        "Turno guardado correctamente."
+        "✅ Turno guardado correctamente."
       );
 
     } catch (error) {
+
       console.error(
         "ERROR GUARDANDO TURNO:",
         error
@@ -254,6 +387,7 @@ function CalendarioPage({
       convertirFecha(fecha);
 
     try {
+
       const datos =
         await obtenerTurnos();
 
@@ -265,7 +399,9 @@ function CalendarioPage({
             item.fecha === fechaKey
         );
 
+
       if (!turno) {
+
         console.warn(
           "No se encontró el turno en Supabase."
         );
@@ -273,43 +409,58 @@ function CalendarioPage({
         return;
       }
 
+
       await eliminarTurnoSupabase(
         turno.id
       );
 
-      /* Actualizar inmediatamente el estado local */
+
+      /* =================================================
+         ACTUALIZAR INMEDIATAMENTE EL ESTADO LOCAL
+      ================================================= */
 
       setTurnos((actuales) => {
+
         const copia = {
           ...actuales,
         };
+
 
         if (!copia[fechaKey]) {
           return copia;
         }
 
+
         const dia = {
           ...copia[fechaKey],
         };
 
+
         delete dia[trabajadorId];
+
 
         if (
           Object.keys(dia).length === 0
         ) {
+
           delete copia[fechaKey];
+
         } else {
+
           copia[fechaKey] = dia;
         }
+
 
         return copia;
       });
 
+
       console.log(
-        "Turno eliminado correctamente."
+        "✅ Turno eliminado correctamente."
       );
 
     } catch (error) {
+
       console.error(
         "ERROR ELIMINANDO TURNO:",
         error
@@ -340,8 +491,10 @@ function CalendarioPage({
   ===================================================== */
 
   if (cargandoTurnos) {
+
     return (
       <main className="dashboard">
+
         <div
           style={{
             padding: "60px",
@@ -349,6 +502,7 @@ function CalendarioPage({
             color: "#667085",
           }}
         >
+
           <div
             style={{
               fontSize: "28px",
@@ -365,7 +519,9 @@ function CalendarioPage({
           <p>
             Consultando programación en Supabase
           </p>
+
         </div>
+
       </main>
     );
   }
@@ -376,11 +532,13 @@ function CalendarioPage({
   ===================================================== */
 
   return (
+
     <main className="dashboard">
 
       <div className="welcome">
 
         <div>
+
           <span className="eyebrow">
             PROGRAMACIÓN
           </span>
@@ -395,6 +553,7 @@ function CalendarioPage({
               : "Consulta las jornadas de día y noche de todo el equipo."
             }
           </p>
+
         </div>
 
 
@@ -434,8 +593,6 @@ function CalendarioPage({
 
       {/* =================================================
           RESUMEN
-
-          Usa exactamente el mismo período del calendario.
       ================================================= */}
 
       <ResumenTurnos
@@ -468,6 +625,7 @@ function CalendarioPage({
               <div className="modal-header">
 
                 <div>
+
                   <span className="modal-label">
                     ASIGNAR TURNO
                   </span>
@@ -475,7 +633,9 @@ function CalendarioPage({
                   <h3>
                     {trabajadorSeleccionado.nombre}
                   </h3>
+
                 </div>
+
 
                 <button
                   type="button"
@@ -492,12 +652,16 @@ function CalendarioPage({
               <div className="modal-person">
 
                 <div className="modal-avatar">
+
                   {trabajadorSeleccionado.nombre
                     ?.charAt(0)
                     ?.toUpperCase()}
+
                 </div>
 
+
                 <div>
+
                   <strong>
                     {trabajadorSeleccionado.nombre}
                   </strong>
@@ -506,6 +670,7 @@ function CalendarioPage({
                     {trabajadorSeleccionado.cargo ||
                       "Vigilante"}
                   </span>
+
                 </div>
 
               </div>
@@ -518,6 +683,7 @@ function CalendarioPage({
                 </span>
 
                 <strong>
+
                   {fechaSeleccionada.toLocaleDateString(
                     "es-CO",
                     {
@@ -526,12 +692,17 @@ function CalendarioPage({
                       month: "long",
                     }
                   )}
+
                 </strong>
 
               </div>
 
 
               <div className="turno-options">
+
+                {/* =======================================
+                    TURNO DE DÍA
+                ======================================= */}
 
                 <button
                   type="button"
@@ -551,6 +722,7 @@ function CalendarioPage({
                   </div>
 
                   <div>
+
                     <strong>
                       Turno de día
                     </strong>
@@ -558,6 +730,7 @@ function CalendarioPage({
                     <span>
                       06:00 — 18:00
                     </span>
+
                   </div>
 
                   <b>
@@ -566,6 +739,10 @@ function CalendarioPage({
 
                 </button>
 
+
+                {/* =======================================
+                    TURNO DE NOCHE
+                ======================================= */}
 
                 <button
                   type="button"
@@ -585,6 +762,7 @@ function CalendarioPage({
                   </div>
 
                   <div>
+
                     <strong>
                       Turno de noche
                     </strong>
@@ -592,6 +770,7 @@ function CalendarioPage({
                     <span>
                       18:00 — 06:00
                     </span>
+
                   </div>
 
                   <b>
@@ -619,10 +798,12 @@ function CalendarioPage({
             </div>
 
           </div>
+
         )}
 
     </main>
   );
 }
+
 
 export default CalendarioPage;
