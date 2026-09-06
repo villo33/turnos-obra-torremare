@@ -15,9 +15,11 @@ function Calendario({
   ===================================================== */
 
   const obtenerInformacionQuincena = (fecha) => {
-    const año = fecha.getFullYear();
-    const mes = fecha.getMonth();
-    const dia = fecha.getDate();
+    const fechaSegura = fecha instanceof Date ? fecha : new Date();
+
+    const año = fechaSegura.getFullYear();
+    const mes = fechaSegura.getMonth();
+    const dia = fechaSegura.getDate();
 
     const ultimoDia = new Date(
       año,
@@ -31,7 +33,7 @@ function Calendario({
         mes,
         quincena: 1,
         primerDia: 1,
-        ultimoDia: Math.min(15, ultimoDia),
+        ultimoDia: 15,
       };
     }
 
@@ -44,17 +46,13 @@ function Calendario({
     };
   };
 
-
   /* =====================================================
-     NORMALIZAR FECHA INICIAL
+     INFORMACIÓN ACTUAL
   ===================================================== */
 
   const informacionQuincena = useMemo(() => {
-    return obtenerInformacionQuincena(
-      fechaInicio
-    );
+    return obtenerInformacionQuincena(fechaInicio);
   }, [fechaInicio]);
-
 
   /* =====================================================
      CREAR DÍAS REALES DE LA QUINCENA
@@ -92,6 +90,20 @@ function Calendario({
     );
   }, [informacionQuincena]);
 
+  /* =====================================================
+     COLUMNAS DINÁMICAS
+     
+     IMPORTANTE:
+     La segunda quincena puede tener 13, 14, 15 o 16 días.
+     Ya no se dejan 15 columnas fijas.
+  ===================================================== */
+
+  const estiloColumnas = useMemo(() => {
+    return {
+      gridTemplateColumns:
+        `185px repeat(${dias.length}, 110px)`,
+    };
+  }, [dias.length]);
 
   /* =====================================================
      CLAVE DE FECHA
@@ -111,7 +123,6 @@ function Calendario({
 
     return `${year}-${month}-${day}`;
   };
-
 
   /* =====================================================
      ES HOY
@@ -137,7 +148,6 @@ function Calendario({
     );
   };
 
-
   /* =====================================================
      NOMBRE DEL DÍA
   ===================================================== */
@@ -153,7 +163,6 @@ function Calendario({
       .replace(".", "")
       .toUpperCase();
   };
-
 
   /* =====================================================
      NOMBRE DEL MES
@@ -177,7 +186,6 @@ function Calendario({
       .toUpperCase();
   }, [informacionQuincena]);
 
-
   /* =====================================================
      TEXTO DE LA QUINCENA
   ===================================================== */
@@ -187,19 +195,14 @@ function Calendario({
       ? `PRIMERA QUINCENA · 1 — ${informacionQuincena.ultimoDia}`
       : `SEGUNDA QUINCENA · 16 — ${informacionQuincena.ultimoDia}`;
 
-
   /* =====================================================
      CAMBIAR QUINCENA
   ===================================================== */
 
-  const cambiarPeriodo = (
-    cantidad
-  ) => {
+  const cambiarPeriodo = (cantidad) => {
     setFechaInicio((actual) => {
       const informacion =
-        obtenerInformacionQuincena(
-          actual
-        );
+        obtenerInformacionQuincena(actual);
 
       let nuevoMes =
         informacion.mes;
@@ -236,17 +239,25 @@ function Calendario({
           ? 1
           : 16;
 
-      return new Date(
+      const nuevaFecha = new Date(
         nuevoAño,
         nuevoMes,
         nuevoDia
       );
+
+      nuevaFecha.setHours(
+        0,
+        0,
+        0,
+        0
+      );
+
+      return nuevaFecha;
     });
   };
 
-
   /* =====================================================
-     IR A LA QUINCENA ACTUAL
+     IR A HOY
   ===================================================== */
 
   const irHoy = () => {
@@ -269,7 +280,6 @@ function Calendario({
     setFechaInicio(fecha);
   };
 
-
   /* =====================================================
      OBTENER TURNO
   ===================================================== */
@@ -288,14 +298,11 @@ function Calendario({
     );
   };
 
-
   /* =====================================================
      SABER SI ES TURNO DE DÍA
   ===================================================== */
 
-  const esTurnoDia = (
-    turno
-  ) => {
+  const esTurnoDia = (turno) => {
     if (!turno) {
       return false;
     }
@@ -310,7 +317,6 @@ function Calendario({
       valor === "día"
     );
   };
-
 
   /* =====================================================
      SELECCIONAR CELDA
@@ -335,7 +341,6 @@ function Calendario({
     }
   };
 
-
   /* =====================================================
      ELIMINAR CELDA
   ===================================================== */
@@ -358,7 +363,6 @@ function Calendario({
       );
     }
   };
-
 
   /* =====================================================
      CONFIRMAR ELIMINACIÓN
@@ -408,7 +412,6 @@ function Calendario({
     );
   };
 
-
   /* =====================================================
      RENDER
   ===================================================== */
@@ -440,7 +443,6 @@ function Calendario({
 
         </div>
 
-
         <div className="calendario-actions">
 
           <button
@@ -450,7 +452,6 @@ function Calendario({
           >
             Hoy
           </button>
-
 
           <button
             type="button"
@@ -463,7 +464,6 @@ function Calendario({
           >
             ‹
           </button>
-
 
           <button
             type="button"
@@ -481,15 +481,16 @@ function Calendario({
 
       </div>
 
-
       <div className="calendar-container">
 
-        <div className="calendar-grid">
+        <div
+          className="calendar-grid"
+          style={estiloColumnas}
+        >
 
           <div className="corner-cell">
             PERSONAL / DÍAS
           </div>
-
 
           {dias.map((fecha) => (
 
@@ -522,7 +523,6 @@ function Calendario({
 
           ))}
 
-
           {trabajadores.map(
             (trabajador) => (
 
@@ -541,7 +541,6 @@ function Calendario({
                       "?"}
                   </div>
 
-
                   <div>
 
                     <strong>
@@ -556,7 +555,6 @@ function Calendario({
                   </div>
 
                 </div>
-
 
                 {dias.map(
                   (fecha) => {
