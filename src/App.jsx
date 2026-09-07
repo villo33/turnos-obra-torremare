@@ -19,6 +19,7 @@ import {
   suscribirseANotificaciones,
   marcarNotificacionLeida,
   activarNotificacionesPush,
+  enviarNotificacionPush,
 } from "./services/notificacionesService";
 
 
@@ -261,9 +262,10 @@ function App() {
 
   }, []);
 
-    /* =====================================================
+
+  /* =====================================================
      REGISTRAR NOTIFICACIONES PUSH DEL TELÉFONO
-     
+
      IMPORTANTE:
      - NO reemplaza la campanita.
      - La campanita sigue funcionando igual.
@@ -277,8 +279,11 @@ function App() {
       !sesion?.user?.id ||
       !perfil
     ) {
+
       return;
+
     }
+
 
     const registrarPush = async () => {
 
@@ -289,7 +294,9 @@ function App() {
           sesion.user.id
         );
 
+
         await activarNotificacionesPush();
+
 
         console.log(
           "✅ Registro Push terminado."
@@ -306,12 +313,14 @@ function App() {
 
     };
 
+
     registrarPush();
 
   }, [
     sesion?.user?.id,
     perfil
   ]);
+
 
   /* =====================================================
      CARGAR TRABAJADORES
@@ -1358,6 +1367,153 @@ function App() {
 
 
       /* =================================================
+         NOTIFICAR AL ADMINISTRADOR POR PUSH
+
+         IMPORTANTE:
+         Esto ocurre DESPUÉS de guardar la confirmación.
+
+         Si el Push falla, la confirmación NO se pierde.
+      ================================================= */
+
+      const ADMINISTRADOR_UUID =
+        "41d3e21d-46b7-41ec-8b7d-cf53b6ef86fb";
+
+
+      const trabajadorActual =
+        trabajadores.find(
+          (trabajador) =>
+            Number(trabajador.id) ===
+            Number(trabajadorIdNumerico)
+        );
+
+
+      const nombreTrabajador =
+        trabajadorActual?.nombre ||
+        "El trabajador";
+
+
+      const formatearFechaConfirmacion = (
+        fecha
+      ) => {
+
+        if (!fecha) {
+
+          return "la fecha indicada";
+
+        }
+
+
+        const [
+          anio,
+          mes,
+          dia
+        ] =
+          String(
+            fecha
+          )
+            .split("-")
+            .map(Number);
+
+
+        if (
+          !anio ||
+          !mes ||
+          !dia
+        ) {
+
+          return fecha;
+
+        }
+
+
+        const fechaLocal =
+          new Date(
+            anio,
+            mes - 1,
+            dia
+          );
+
+
+        return fechaLocal.toLocaleDateString(
+          "es-CO",
+          {
+            day: "numeric",
+            month: "long",
+          }
+        );
+
+      };
+
+
+      const fechaConfirmacion =
+        formatearFechaConfirmacion(
+          notificacion.fecha_turno
+        );
+
+
+      const tituloAdmin =
+        "🔔 Turno confirmado";
+
+
+      const mensajeAdmin =
+        `${nombreTrabajador} confirmó su turno del ${fechaConfirmacion}.`;
+
+
+      console.log(
+        "📨 NOTIFICANDO AL ADMINISTRADOR:",
+        {
+          administrador:
+            ADMINISTRADOR_UUID,
+
+          trabajador:
+            nombreTrabajador,
+
+          fecha:
+            fechaConfirmacion,
+
+          titulo:
+            tituloAdmin,
+
+          mensaje:
+            mensajeAdmin,
+        }
+      );
+
+
+      try {
+
+        await enviarNotificacionPush({
+
+          userId:
+            ADMINISTRADOR_UUID,
+
+          title:
+            tituloAdmin,
+
+          message:
+            mensajeAdmin,
+
+          url:
+            "/",
+
+        });
+
+
+        console.log(
+          "✅ PUSH ENVIADO AL ADMINISTRADOR"
+        );
+
+      } catch (pushError) {
+
+        console.error(
+          "⚠️ La confirmación se guardó, pero no se pudo enviar el Push al administrador:",
+          pushError
+        );
+
+      }
+
+
+      /* =================================================
          GUARDAR UUID LOCALMENTE
       ================================================= */
 
@@ -2236,7 +2392,6 @@ function App() {
                               key={
                                 idNotificacion
                               }
-
                               style={{
 
                                 padding:
