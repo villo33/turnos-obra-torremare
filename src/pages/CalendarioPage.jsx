@@ -75,6 +75,28 @@ const registrarEnvioPush = (userId) => {
 
 
 /* =====================================================
+   OBTENER INICIO DE LA QUINCENA ACTUAL
+
+   1 al 15
+   16 al último día del mes
+===================================================== */
+
+const obtenerInicioQuincena = () => {
+  const fecha = new Date();
+
+  fecha.setHours(0, 0, 0, 0);
+
+  if (fecha.getDate() <= 15) {
+    fecha.setDate(1);
+  } else {
+    fecha.setDate(16);
+  }
+
+  return fecha;
+};
+
+
+/* =====================================================
    COMPONENTE
 ===================================================== */
 
@@ -87,31 +109,15 @@ function CalendarioPage({
 
   /* =====================================================
      FECHA INICIAL DEL CALENDARIO
+
+     Ahora siempre empieza en:
+
+     Día 1  → quincena 1
+     Día 16 → quincena 2
   ===================================================== */
 
-  const obtenerLunesActual = () => {
-    const fecha = new Date();
-
-    fecha.setHours(0, 0, 0, 0);
-
-    const diaSemana =
-      fecha.getDay();
-
-    const diferencia =
-      diaSemana === 0
-        ? -6
-        : 1 - diaSemana;
-
-    fecha.setDate(
-      fecha.getDate() + diferencia
-    );
-
-    return fecha;
-  };
-
-
   const [fechaInicio, setFechaInicio] =
-    useState(obtenerLunesActual);
+    useState(obtenerInicioQuincena);
 
 
   /* =====================================================
@@ -467,7 +473,6 @@ function CalendarioPage({
                 userId
               );
 
-
               const resultadoPush =
                 await enviarNotificacionPush({
 
@@ -485,7 +490,6 @@ function CalendarioPage({
 
                 });
 
-
               console.log(
                 "✅ Push agrupado enviado correctamente:",
                 resultadoPush
@@ -499,7 +503,6 @@ function CalendarioPage({
                 "⚠️ El turno se guardó, pero no se pudo enviar el Push:",
                 errorPush
               );
-
 
               /*
                 Si el Push falla, permitimos que el

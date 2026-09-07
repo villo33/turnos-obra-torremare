@@ -1646,3 +1646,56 @@
     padding: 5px 14px 14px;
   }
 }
+/* =====================================================
+   CUADRO DE NOTIFICACIONES - TELÉFONO
+   Corrige el desbordamiento en vertical y horizontal
+===================================================== */
+
+@media (max-width: 600px) {
+
+  .notification-dropdown {
+    position: fixed !important;
+
+    top: 72px !important;
+
+    left: 10px !important;
+    right: 10px !important;
+
+    width: auto !important;
+    max-width: none !important;
+
+    max-height: calc(100dvh - 84px) !important;
+
+    box-sizing: border-box !important;
+
+    z-index: 9999 !important;
+  }
+
+}
+
+
+/* =====================================================
+   TELÉFONO EN HORIZONTAL
+===================================================== */
+
+@media (max-width: 900px) and (orientation: landscape) {
+
+  .notification-dropdown {
+    position: fixed !important;
+
+    top: 58px !important;
+
+    left: 10px !important;
+    right: 10px !important;
+
+    width: auto !important;
+    max-width: none !important;
+
+    max-height: calc(100dvh - 68px) !important;
+
+    box-sizing: border-box !important;
+
+    z-index: 9999 !important;
+  }
+
+}

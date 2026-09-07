@@ -2136,6 +2136,7 @@ function App() {
               {notificacionesAbiertas && (
 
                 <div
+                  className="notification-dropdown"
                   style={{
                     position:
                       "absolute",
