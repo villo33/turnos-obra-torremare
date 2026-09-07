@@ -1037,6 +1037,7 @@ function App() {
 
         }
 
+
       } catch (error) {
 
         console.error(
@@ -1502,6 +1503,7 @@ function App() {
         console.log(
           "✅ PUSH ENVIADO AL ADMINISTRADOR"
         );
+
 
       } catch (pushError) {
 
@@ -2148,7 +2150,10 @@ function App() {
                       "360px",
 
                     maxWidth:
-                      "calc(100vw - 30px)",
+                      "calc(100vw - 20px)",
+
+                    maxHeight:
+                      "calc(100vh - 90px)",
 
                     background:
                       "#fff",
@@ -2269,7 +2274,7 @@ function App() {
                   <div
                     style={{
                       maxHeight:
-                        "420px",
+                        "calc(100vh - 190px)",
 
                       overflowY:
                         "auto",
