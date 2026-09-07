@@ -1,17 +1,17 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import { obtenerTurnos } from "../services/turnosService";
 
-function Administracion({
-  trabajadores = [],
-  turnos = {},
-}) {
+function Administracion({ trabajadores = [] }) {
+  const hoy = new Date();
 
-  const [nombreObra, setNombreObra] =
-    useState("Torre Mare");
+  /* =====================================================
+     CONFIGURACIÓN
+  ===================================================== */
 
-  const [ubicacion, setUbicacion] =
-    useState("");
+  const [nombreObra, setNombreObra] = useState("Torre Mare");
+  const [ubicacion, setUbicacion] = useState("");
 
   const [horaInicioDia, setHoraInicioDia] =
     useState("06:00");
@@ -25,167 +25,210 @@ function Administracion({
   const [horaFinNoche, setHoraFinNoche] =
     useState("06:00");
 
-  const [guardado, setGuardado] =
-    useState(false);
-
+  const [guardado, setGuardado] = useState(false);
   const [generandoPDF, setGenerandoPDF] =
     useState(false);
 
+  /* =====================================================
+     TURNOS REALES
+  ===================================================== */
+
+  const [turnosReales, setTurnosReales] = useState([]);
+  const [cargandoTurnos, setCargandoTurnos] =
+    useState(true);
+
+  const [errorTurnos, setErrorTurnos] =
+    useState("");
+
+  /* =====================================================
+     PERÍODO DEL REPORTE
+  ===================================================== */
+
+  const obtenerMesActual = () => {
+    return `${hoy.getFullYear()}-${String(
+      hoy.getMonth() + 1
+    ).padStart(2, "0")}`;
+  };
+
+  const [mesReporte, setMesReporte] =
+    useState(obtenerMesActual());
+
+  const [quincenaReporte, setQuincenaReporte] =
+    useState(
+      hoy.getDate() <= 15
+        ? "primera"
+        : "segunda"
+    );
+
+  /* =====================================================
+     CARGAR TURNOS
+  ===================================================== */
+
+  const cargarTurnosReales = async () => {
+    try {
+      setCargandoTurnos(true);
+      setErrorTurnos("");
+
+      const data = await obtenerTurnos();
+
+      setTurnosReales(data || []);
+    } catch (error) {
+      console.error(
+        "Error cargando turnos:",
+        error
+      );
+
+      setErrorTurnos(
+        "No se pudieron cargar los turnos reales."
+      );
+    } finally {
+      setCargandoTurnos(false);
+    }
+  };
+
+  useEffect(() => {
+    cargarTurnosReales();
+  }, []);
 
   /* =====================================================
      GUARDAR CONFIGURACIÓN
   ===================================================== */
 
   const guardarConfiguracion = (e) => {
-
     e.preventDefault();
 
     setGuardado(true);
 
     setTimeout(() => {
-
       setGuardado(false);
-
     }, 2500);
-
   };
-
-
-  /* =====================================================
-     FECHA ACTUAL
-  ===================================================== */
-
-  const obtenerFechaHoy = () => {
-
-    const fecha = new Date();
-
-    fecha.setHours(
-      0,
-      0,
-      0,
-      0
-    );
-
-    return fecha;
-
-  };
-
-
-  /* =====================================================
-     INICIO DE QUINCENA
-  ===================================================== */
-
-  const obtenerInicioQuincena = (fecha) => {
-
-    const inicio =
-      new Date(fecha);
-
-    inicio.setHours(
-      0,
-      0,
-      0,
-      0
-    );
-
-    if (
-      inicio.getDate() <= 15
-    ) {
-
-      inicio.setDate(1);
-
-    } else {
-
-      inicio.setDate(16);
-
-    }
-
-    return inicio;
-
-  };
-
-
-  /* =====================================================
-     FIN DE QUINCENA
-  ===================================================== */
-
-  const obtenerFinQuincena = (fecha) => {
-
-    const fin =
-      new Date(fecha);
-
-    fin.setHours(
-      0,
-      0,
-      0,
-      0
-    );
-
-    if (
-      fin.getDate() <= 15
-    ) {
-
-      fin.setDate(15);
-
-    } else {
-
-      fin.setMonth(
-        fin.getMonth() + 1,
-        0
-      );
-
-    }
-
-    return fin;
-
-  };
-
 
   /* =====================================================
      FECHA YYYY-MM-DD
   ===================================================== */
 
   const obtenerClaveFecha = (fecha) => {
+    const anio = fecha.getFullYear();
 
-    const anio =
-      fecha.getFullYear();
+    const mes = String(
+      fecha.getMonth() + 1
+    ).padStart(2, "0");
 
-    const mes =
-      String(
-        fecha.getMonth() + 1
-      ).padStart(
-        2,
-        "0"
-      );
-
-    const dia =
-      String(
-        fecha.getDate()
-      ).padStart(
-        2,
-        "0"
-      );
+    const dia = String(
+      fecha.getDate()
+    ).padStart(2, "0");
 
     return `${anio}-${mes}-${dia}`;
-
   };
 
+  /* =====================================================
+     FECHAS DEL REPORTE
+  ===================================================== */
+
+  const obtenerFechasReporte = () => {
+    const [anio, mes] =
+      mesReporte.split("-").map(Number);
+
+    const inicio = new Date(
+      anio,
+      mes - 1,
+      1
+    );
+
+    const fin = new Date(
+      anio,
+      mes,
+      0
+    );
+
+    inicio.setHours(0, 0, 0, 0);
+    fin.setHours(0, 0, 0, 0);
+
+    if (quincenaReporte === "primera") {
+      inicio.setDate(1);
+      fin.setDate(15);
+    } else {
+      inicio.setDate(16);
+    }
+
+    return {
+      inicio,
+      fin,
+    };
+  };
+
+  /* =====================================================
+     DÍAS DEL PERÍODO
+  ===================================================== */
+
+  const obtenerDiasPeriodo = () => {
+    const { inicio, fin } =
+      obtenerFechasReporte();
+
+    const dias = [];
+    const fecha = new Date(inicio);
+
+    while (fecha <= fin) {
+      dias.push(new Date(fecha));
+
+      fecha.setDate(
+        fecha.getDate() + 1
+      );
+    }
+
+    return dias;
+  };
+
+  /* =====================================================
+     NOMBRE DEL MES
+  ===================================================== */
+
+  const obtenerNombreMes = (fecha) => {
+    return fecha.toLocaleDateString(
+      "es-CO",
+      {
+        month: "long",
+      }
+    );
+  };
+
+  /* =====================================================
+     TEXTO DEL PERÍODO
+  ===================================================== */
+
+  const obtenerTextoPeriodo = () => {
+    const { inicio, fin } =
+      obtenerFechasReporte();
+
+    const mes =
+      obtenerNombreMes(inicio);
+
+    const anio =
+      inicio.getFullYear();
+
+    if (
+      quincenaReporte === "primera"
+    ) {
+      return `1 al 15 de ${mes} de ${anio}`;
+    }
+
+    return `16 al ${fin.getDate()} de ${mes} de ${anio}`;
+  };
 
   /* =====================================================
      FORMATEAR FECHA
   ===================================================== */
 
   const formatearFecha = (fecha) => {
-
     if (!fecha) {
-
       return "";
-
     }
 
-    const partes =
-      String(fecha)
-        .split("-")
-        .map(Number);
+    const partes = String(fecha)
+      .substring(0, 10)
+      .split("-")
+      .map(Number);
 
     if (
       partes.length !== 3 ||
@@ -193,144 +236,201 @@ function Administracion({
       !partes[1] ||
       !partes[2]
     ) {
-
       return String(fecha);
-
     }
 
-    const fechaLocal =
-      new Date(
-        partes[0],
-        partes[1] - 1,
-        partes[2]
-      );
+    const fechaLocal = new Date(
+      partes[0],
+      partes[1] - 1,
+      partes[2]
+    );
 
     return fechaLocal.toLocaleDateString(
       "es-CO",
       {
+        weekday: "long",
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
       }
     );
-
   };
 
-
   /* =====================================================
-     NOMBRE DEL MES
-  ===================================================== */
-
-  const obtenerNombreMes = (fecha) => {
-
-    return fecha.toLocaleDateString(
-      "es-CO",
-      {
-        month: "long",
-      }
-    );
-
-  };
-
-
-  /* =====================================================
-     OBTENER NOMBRE DEL TRABAJADOR
+     NOMBRE DEL TRABAJADOR
   ===================================================== */
 
   const obtenerNombreTrabajador = (
     trabajador
   ) => {
-
     if (!trabajador) {
-
       return "Sin nombre";
-
     }
 
     if (
       trabajador.nombre &&
       trabajador.apellido
     ) {
-
       return `${trabajador.nombre} ${trabajador.apellido}`;
-
     }
 
-    if (
-      trabajador.nombre
-    ) {
-
+    if (trabajador.nombre) {
       return trabajador.nombre;
-
     }
 
-    if (
-      trabajador.nombres
-    ) {
-
+    if (trabajador.nombres) {
       return trabajador.nombres;
-
     }
 
     return (
       trabajador.email ||
       "Sin nombre"
     );
-
   };
-
 
   /* =====================================================
-     OBTENER TURNO
+     OBTENER TRABAJADOR
   ===================================================== */
 
-  const obtenerTurno = (
-    fecha,
+  const buscarTrabajador = (
     trabajadorId
   ) => {
-
-    const claveFecha =
-      obtenerClaveFecha(fecha);
-
-    const turnosDelDia =
-      turnos?.[claveFecha];
-
-    if (!turnosDelDia) {
-
-      return null;
-
-    }
-
-    return (
-      turnosDelDia?.[trabajadorId] ||
-      turnosDelDia?.[
+    return trabajadores.find(
+      (trabajador) =>
+        String(trabajador.id) ===
         String(trabajadorId)
-      ] ||
-      null
     );
-
   };
 
+  /* =====================================================
+     TURNOS DEL PERÍODO
+  ===================================================== */
+
+  const obtenerTurnosDelPeriodo = (
+    listaTurnos = turnosReales
+  ) => {
+    const {
+      inicio,
+      fin,
+    } = obtenerFechasReporte();
+
+    const fechaInicio =
+      obtenerClaveFecha(inicio);
+
+    const fechaFin =
+      obtenerClaveFecha(fin);
+
+    return listaTurnos.filter(
+      (turno) => {
+        if (!turno?.fecha) {
+          return false;
+        }
+
+        const fecha = String(
+          turno.fecha
+        ).substring(0, 10);
+
+        return (
+          fecha >= fechaInicio &&
+          fecha <= fechaFin
+        );
+      }
+    );
+  };
+
+  /* =====================================================
+     RESUMEN REAL
+  ===================================================== */
+
+  const obtenerResumen = (
+    listaTurnos = turnosReales
+  ) => {
+    const turnosPeriodo =
+      obtenerTurnosDelPeriodo(
+        listaTurnos
+      );
+
+    return trabajadores.map(
+      (trabajador) => {
+        const turnosTrabajador =
+          turnosPeriodo.filter(
+            (turno) =>
+              String(
+                turno.trabajador_id
+              ) ===
+              String(
+                trabajador.id
+              )
+          );
+
+        const dia =
+          turnosTrabajador.filter(
+            (turno) =>
+              turno.tipo === "dia"
+          ).length;
+
+        const noche =
+          turnosTrabajador.filter(
+            (turno) =>
+              turno.tipo === "noche"
+          ).length;
+
+        return {
+          id: trabajador.id,
+
+          nombre:
+            obtenerNombreTrabajador(
+              trabajador
+            ),
+
+          dia,
+
+          noche,
+
+          total:
+            dia + noche,
+        };
+      }
+    );
+  };
+
+  /* =====================================================
+     TOTALES
+  ===================================================== */
+
+  const obtenerTotales = () => {
+    const resumen =
+      obtenerResumen();
+
+    return resumen.reduce(
+      (total, trabajador) => {
+        total.dia += trabajador.dia;
+        total.noche += trabajador.noche;
+        total.total += trabajador.total;
+
+        return total;
+      },
+      {
+        dia: 0,
+        noche: 0,
+        total: 0,
+      }
+    );
+  };
 
   /* =====================================================
      CARGAR LOGO
   ===================================================== */
 
   const cargarLogo = async () => {
-
     try {
-
       const respuesta =
         await fetch(
           "/logo192.png"
         );
 
-      if (
-        !respuesta.ok
-      ) {
-
+      if (!respuesta.ok) {
         return null;
-
       }
 
       const blob =
@@ -338,85 +438,64 @@ function Administracion({
 
       return new Promise(
         (resolve) => {
-
           const lector =
             new FileReader();
 
           lector.onloadend = () => {
-
             resolve(
               lector.result
             );
-
           };
 
           lector.onerror = () => {
-
             resolve(null);
-
           };
 
           lector.readAsDataURL(
             blob
           );
-
         }
       );
-
     } catch (error) {
-
       console.warn(
         "No se pudo cargar el logo:",
         error
       );
 
       return null;
-
     }
-
   };
-
 
   /* =====================================================
      GENERAR PDF
   ===================================================== */
 
   const generarPDF = async () => {
-
-    if (
-      generandoPDF
-    ) {
-
+    if (generandoPDF) {
       return;
-
     }
 
     try {
-
       setGenerandoPDF(true);
 
-
       /* ===============================================
-         FECHAS DE LA QUINCENA
+         ACTUALIZAR DATOS DESDE SUPABASE
       =============================================== */
 
-      const hoy =
-        obtenerFechaHoy();
+      const datosActualizados =
+        await obtenerTurnos();
 
-      const inicio =
-        obtenerInicioQuincena(
-          hoy
+      setTurnosReales(
+        datosActualizados || []
+      );
+
+      const turnosPeriodo =
+        obtenerTurnosDelPeriodo(
+          datosActualizados || []
         );
 
-      const fin =
-        obtenerFinQuincena(
-          hoy
-        );
-
-
-      /* ===============================================
-         CREAR PDF
-      =============================================== */
+      const { inicio, fin } =
+        obtenerFechasReporte();
 
       const doc =
         new jsPDF({
@@ -424,7 +503,6 @@ function Administracion({
           unit: "mm",
           format: "a4",
         });
-
 
       /* ===============================================
          LOGO
@@ -434,9 +512,7 @@ function Administracion({
         await cargarLogo();
 
       if (logo) {
-
         try {
-
           doc.addImage(
             logo,
             "PNG",
@@ -445,37 +521,27 @@ function Administracion({
             24,
             24
           );
-
         } catch (error) {
-
           console.warn(
             "No se pudo insertar el logo:",
             error
           );
-
         }
-
       }
-
 
       /* ===============================================
          ENCABEZADO
       =============================================== */
 
       const posicionTitulo =
-        logo
-          ? 44
-          : 14;
-
+        logo ? 44 : 14;
 
       doc.setFont(
         "helvetica",
         "bold"
       );
 
-      doc.setFontSize(
-        18
-      );
+      doc.setFontSize(18);
 
       doc.text(
         nombreObra ||
@@ -484,10 +550,7 @@ function Administracion({
         20
       );
 
-
-      doc.setFontSize(
-        10
-      );
+      doc.setFontSize(10);
 
       doc.setFont(
         "helvetica",
@@ -500,22 +563,16 @@ function Administracion({
         27
       );
 
-
-      if (
-        ubicacion
-      ) {
-
+      if (ubicacion) {
         doc.text(
           ubicacion,
           posicionTitulo,
           33
         );
-
       }
 
-
       /* ===============================================
-         INFORMACIÓN DE QUINCENA
+         INFORMACIÓN
       =============================================== */
 
       doc.setFont(
@@ -523,9 +580,7 @@ function Administracion({
         "bold"
       );
 
-      doc.setFontSize(
-        12
-      );
+      doc.setFontSize(12);
 
       doc.text(
         "Reporte de turnos",
@@ -533,328 +588,346 @@ function Administracion({
         48
       );
 
-
       doc.setFont(
         "helvetica",
         "normal"
       );
 
-      doc.setFontSize(
-        10
-      );
-
-
-      const textoQuincena =
-        inicio.getDate() <= 15
-          ? `Quincena: 1 al 15 de ${obtenerNombreMes(inicio)} de ${inicio.getFullYear()}`
-          : `Quincena: 16 al ${fin.getDate()} de ${obtenerNombreMes(inicio)} de ${inicio.getFullYear()}`;
-
+      doc.setFontSize(10);
 
       doc.text(
-        textoQuincena,
+        `Período: ${obtenerTextoPeriodo()}`,
         14,
         55
       );
 
-
       doc.text(
-        `Generado: ${hoy.toLocaleDateString(
+        `Generado: ${new Date().toLocaleDateString(
           "es-CO"
         )}`,
         14,
         61
       );
 
-
       /* ===============================================
-         PREPARAR DATOS
+         RESUMEN GENERAL
       =============================================== */
 
       const filasResumen = [];
 
       let totalDiaGeneral = 0;
-
       let totalNocheGeneral = 0;
-
 
       trabajadores.forEach(
         (trabajador) => {
-
-          const trabajadorId =
-            trabajador.id;
-
-          let totalDia = 0;
-
-          let totalNoche = 0;
-
-
-          let fechaActual =
-            new Date(inicio);
-
-
-          while (
-            fechaActual <= fin
-          ) {
-
-            const turno =
-              obtenerTurno(
-                fechaActual,
-                trabajadorId
-              );
-
-
-            if (
-              turno === "dia"
-            ) {
-
-              totalDia++;
-
-            }
-
-
-            if (
-              turno === "noche"
-            ) {
-
-              totalNoche++;
-
-            }
-
-
-            fechaActual.setDate(
-              fechaActual.getDate() + 1
+          const turnosTrabajador =
+            turnosPeriodo.filter(
+              (turno) =>
+                String(
+                  turno.trabajador_id
+                ) ===
+                String(
+                  trabajador.id
+                )
             );
 
-          }
+          const dia =
+            turnosTrabajador.filter(
+              (turno) =>
+                turno.tipo === "dia"
+            ).length;
 
+          const noche =
+            turnosTrabajador.filter(
+              (turno) =>
+                turno.tipo === "noche"
+            ).length;
 
-          totalDiaGeneral +=
-            totalDia;
-
-          totalNocheGeneral +=
-            totalNoche;
-
+          totalDiaGeneral += dia;
+          totalNocheGeneral += noche;
 
           filasResumen.push([
-
             obtenerNombreTrabajador(
               trabajador
             ),
-
-            String(
-              totalDia
-            ),
-
-            String(
-              totalNoche
-            ),
-
-            String(
-              totalDia +
-              totalNoche
-            ),
-
+            String(dia),
+            String(noche),
+            String(dia + noche),
           ]);
-
         }
       );
-
-
-      /* ===============================================
-         TABLA RESUMEN
-      =============================================== */
-
-      autoTable(
-        doc,
-        {
-          startY: 70,
-
-          head: [
-            [
-              "Trabajador",
-              "Día",
-              "Noche",
-              "Total",
-            ],
-          ],
-
-          body:
-            filasResumen,
-
-          foot: [
-            [
-              "TOTAL GENERAL",
-              String(
-                totalDiaGeneral
-              ),
-              String(
-                totalNocheGeneral
-              ),
-              String(
-                totalDiaGeneral +
-                totalNocheGeneral
-              ),
-            ],
-          ],
-
-          theme:
-            "grid",
-
-          styles: {
-            fontSize: 9,
-            cellPadding: 3,
-          },
-
-          headStyles: {
-            fontStyle:
-              "bold",
-          },
-
-          footStyles: {
-            fontStyle:
-              "bold",
-          },
-
-          columnStyles: {
-
-            0: {
-              cellWidth: 90,
-            },
-
-            1: {
-              halign: "center",
-            },
-
-            2: {
-              halign: "center",
-            },
-
-            3: {
-              halign: "center",
-            },
-
-          },
-
-        }
-      );
-
-
-      /* ===============================================
-         DETALLE DE TURNOS
-      =============================================== */
-
-      let posicionY =
-        doc.lastAutoTable.finalY + 12;
-
 
       doc.setFont(
         "helvetica",
         "bold"
       );
 
-      doc.setFontSize(
-        12
-      );
+      doc.setFontSize(12);
 
       doc.text(
-        "Detalle de turnos",
+        "Resumen por trabajador",
+        14,
+        70
+      );
+
+      autoTable(doc, {
+        startY: 75,
+
+        head: [
+          [
+            "Trabajador",
+            "Día",
+            "Noche",
+            "Total",
+          ],
+        ],
+
+        body:
+          filasResumen,
+
+        foot: [
+          [
+            "TOTAL GENERAL",
+            String(
+              totalDiaGeneral
+            ),
+            String(
+              totalNocheGeneral
+            ),
+            String(
+              totalDiaGeneral +
+                totalNocheGeneral
+            ),
+          ],
+        ],
+
+        theme: "grid",
+
+        styles: {
+          fontSize: 9,
+          cellPadding: 3,
+        },
+
+        headStyles: {
+          fontStyle: "bold",
+        },
+
+        footStyles: {
+          fontStyle: "bold",
+        },
+
+        columnStyles: {
+          0: {
+            cellWidth: 90,
+          },
+
+          1: {
+            halign: "center",
+          },
+
+          2: {
+            halign: "center",
+          },
+
+          3: {
+            halign: "center",
+          },
+        },
+      });
+
+      /* ===============================================
+         DETALLE POR TRABAJADOR
+      =============================================== */
+
+      let posicionY =
+        doc.lastAutoTable.finalY +
+        14;
+
+      doc.setFont(
+        "helvetica",
+        "bold"
+      );
+
+      doc.setFontSize(12);
+
+      doc.text(
+        "Días trabajados por trabajador",
         14,
         posicionY
       );
 
+      posicionY += 7;
 
-      posicionY += 6;
-
-
-      const filasDetalle = [];
-
+      /* ===============================================
+         CADA TRABAJADOR
+      =============================================== */
 
       trabajadores.forEach(
         (trabajador) => {
-
-          let fechaActual =
-            new Date(inicio);
-
-
-          while (
-            fechaActual <= fin
-          ) {
-
-            const turno =
-              obtenerTurno(
-                fechaActual,
-                trabajador.id
+          const turnosTrabajador =
+            turnosPeriodo
+              .filter(
+                (turno) =>
+                  String(
+                    turno.trabajador_id
+                  ) ===
+                  String(
+                    trabajador.id
+                  )
+              )
+              .sort((a, b) =>
+                String(
+                  a.fecha
+                ).localeCompare(
+                  String(b.fecha)
+                )
               );
 
+          /*
+            Si no caben los datos en la página,
+            creamos una nueva.
+          */
 
-            if (
-              turno
-            ) {
+          if (
+            posicionY >
+            doc.internal.pageSize.getHeight() -
+              55
+          ) {
+            doc.addPage();
 
-              const nombre =
-                obtenerNombreTrabajador(
-                  trabajador
-                );
-
-
-              const tipo =
-                turno === "dia"
-                  ? "Día"
-                  : turno === "noche"
-                    ? "Noche"
-                    : String(turno);
-
-
-              filasDetalle.push([
-
-                formatearFecha(
-                  obtenerClaveFecha(
-                    fechaActual
-                  )
-                ),
-
-                nombre,
-
-                tipo,
-
-              ]);
-
-            }
-
-
-            fechaActual.setDate(
-              fechaActual.getDate() + 1
-            );
-
+            posicionY = 20;
           }
 
-        }
-      );
+          /* =============================================
+             NOMBRE
+          ============================================= */
 
+          doc.setFont(
+            "helvetica",
+            "bold"
+          );
 
-      if (
-        filasDetalle.length > 0
-      ) {
+          doc.setFontSize(10);
 
-        autoTable(
-          doc,
-          {
-            startY:
-              posicionY,
+          doc.text(
+            obtenerNombreTrabajador(
+              trabajador
+            ),
+            14,
+            posicionY
+          );
+
+          posicionY += 5;
+
+          /* =============================================
+             SIN TURNOS
+          ============================================= */
+
+          if (
+            turnosTrabajador.length ===
+            0
+          ) {
+            doc.setFont(
+              "helvetica",
+              "normal"
+            );
+
+            doc.setFontSize(8);
+
+            doc.text(
+              "No tiene turnos registrados en este período.",
+              18,
+              posicionY
+            );
+
+            posicionY += 9;
+
+            return;
+          }
+
+          /* =============================================
+             RESUMEN DEL TRABAJADOR
+          ============================================= */
+
+          const cantidadDia =
+            turnosTrabajador.filter(
+              (turno) =>
+                turno.tipo === "dia"
+            ).length;
+
+          const cantidadNoche =
+            turnosTrabajador.filter(
+              (turno) =>
+                turno.tipo ===
+                "noche"
+            ).length;
+
+          doc.setFont(
+            "helvetica",
+            "normal"
+          );
+
+          doc.setFontSize(8);
+
+          doc.text(
+            `Día: ${cantidadDia}   |   Noche: ${cantidadNoche}   |   Total: ${turnosTrabajador.length}`,
+            14,
+            posicionY
+          );
+
+          posicionY += 4;
+
+          /* =============================================
+             TABLA DE DÍAS
+          ============================================= */
+
+          const filasTrabajador =
+            turnosTrabajador.map(
+              (turno) => {
+                let tipo =
+                  String(
+                    turno.tipo ||
+                      ""
+                  );
+
+                if (
+                  turno.tipo ===
+                  "dia"
+                ) {
+                  tipo = "Día";
+                }
+
+                if (
+                  turno.tipo ===
+                  "noche"
+                ) {
+                  tipo =
+                    "Noche";
+                }
+
+                return [
+                  formatearFecha(
+                    turno.fecha
+                  ),
+                  tipo,
+                ];
+              }
+            );
+
+          autoTable(doc, {
+            startY: posicionY,
 
             head: [
               [
-                "Fecha",
-                "Trabajador",
+                "Día trabajado",
                 "Turno",
               ],
             ],
 
             body:
-              filasDetalle,
+              filasTrabajador,
 
-            theme:
-              "grid",
+            theme: "grid",
 
             styles: {
               fontSize: 8,
@@ -867,78 +940,86 @@ function Administracion({
             },
 
             columnStyles: {
-
               0: {
-                cellWidth: 30,
+                cellWidth: 115,
               },
 
               1: {
-                cellWidth: 105,
+                halign:
+                  "center",
               },
-
-              2: {
-                halign: "center",
-              },
-
             },
 
-          }
-        );
+            margin: {
+              left: 14,
+              right: 14,
+            },
+          });
 
-      } else {
+          posicionY =
+            doc.lastAutoTable.finalY +
+            9;
+        }
+      );
+
+      /* ===============================================
+         SI NO HAY TURNOS
+      =============================================== */
+
+      if (
+        turnosPeriodo.length ===
+        0
+      ) {
+        if (
+          posicionY >
+          doc.internal.pageSize.getHeight() -
+            30
+        ) {
+          doc.addPage();
+          posicionY = 25;
+        }
 
         doc.setFont(
           "helvetica",
           "normal"
         );
 
-        doc.setFontSize(
-          10
-        );
+        doc.setFontSize(10);
 
         doc.text(
           "No hay turnos registrados en esta quincena.",
           14,
-          posicionY + 5
+          posicionY
         );
-
       }
-
 
       /* ===============================================
          FIRMA
       =============================================== */
 
-      const paginaFinal =
+      const altoPagina =
         doc.internal.pageSize.getHeight();
 
       let firmaY =
-        paginaFinal - 35;
-
+        altoPagina - 35;
 
       if (
-        doc.lastAutoTable &&
-        doc.lastAutoTable.finalY >
-          firmaY - 15
+        posicionY >
+        firmaY - 10
       ) {
-
         doc.addPage();
 
         firmaY =
-          doc.internal.pageSize.getHeight() - 35;
-
+          doc.internal.pageSize.getHeight() -
+          35;
       }
-
 
       doc.setFont(
         "helvetica",
         "normal"
       );
 
-      doc.setFontSize(
-        9
-      );
-
+      doc.setFontSize(9);
 
       doc.line(
         65,
@@ -947,13 +1028,11 @@ function Administracion({
         firmaY
       );
 
-
       doc.text(
         "Firma del administrador",
         88,
         firmaY + 6
       );
-
 
       /* ===============================================
          PIE DE PÁGINA
@@ -962,16 +1041,13 @@ function Administracion({
       const totalPaginas =
         doc.internal.getNumberOfPages();
 
-
       for (
         let pagina = 1;
-        pagina <= totalPaginas;
+        pagina <=
+        totalPaginas;
         pagina++
       ) {
-
-        doc.setPage(
-          pagina
-        );
+        doc.setPage(pagina);
 
         const alto =
           doc.internal.pageSize.getHeight();
@@ -979,23 +1055,21 @@ function Administracion({
         const ancho =
           doc.internal.pageSize.getWidth();
 
-
-        doc.setFontSize(
-          8
-        );
-
         doc.setFont(
           "helvetica",
           "normal"
         );
 
+        doc.setFontSize(8);
 
         doc.text(
-          `${nombreObra || "Torre Mare"} — Control de obra`,
+          `${
+            nombreObra ||
+            "Torre Mare"
+          } — Control de obra`,
           14,
           alto - 10
         );
-
 
         doc.text(
           `Página ${pagina} de ${totalPaginas}`,
@@ -1005,46 +1079,54 @@ function Administracion({
             align: "right",
           }
         );
-
       }
-
 
       /* ===============================================
          DESCARGAR
       =============================================== */
 
       const nombreArchivo =
-        `turnos-${obtenerClaveFecha(inicio)}-${obtenerClaveFecha(fin)}.pdf`;
-
+        `turnos-${obtenerClaveFecha(
+          inicio
+        )}-${obtenerClaveFecha(
+          fin
+        )}.pdf`;
 
       doc.save(
         nombreArchivo
       );
-
-
     } catch (error) {
-
       console.error(
         "Error generando PDF:",
         error
       );
 
-
       alert(
         "No se pudo generar el PDF."
       );
-
     } finally {
-
       setGenerandoPDF(false);
-
     }
-
   };
 
+  /* =====================================================
+     DATOS VISUALES
+  ===================================================== */
+
+  const resumen =
+    obtenerResumen();
+
+  const totales =
+    obtenerTotales();
+
+  const turnosPeriodo =
+    obtenerTurnosDelPeriodo();
+
+  /* =====================================================
+     INTERFAZ
+  ===================================================== */
 
   return (
-
     <main className="administracion-page">
 
       <div className="administracion-header">
@@ -1060,7 +1142,8 @@ function Administracion({
           </h2>
 
           <p>
-            Configura la información general y los horarios de la obra.
+            Configura la información general y
+            los horarios de la obra.
           </p>
 
         </div>
@@ -1069,6 +1152,10 @@ function Administracion({
 
 
       <div className="administracion-grid">
+
+        {/* =================================================
+            CONFIGURACIÓN
+        ================================================= */}
 
         <section className="admin-panel">
 
@@ -1108,7 +1195,9 @@ function Administracion({
 
               <input
                 type="text"
-                value={nombreObra}
+                value={
+                  nombreObra
+                }
                 onChange={(e) =>
                   setNombreObra(
                     e.target.value
@@ -1128,7 +1217,9 @@ function Administracion({
 
               <input
                 type="text"
-                value={ubicacion}
+                value={
+                  ubicacion
+                }
                 onChange={(e) =>
                   setUbicacion(
                     e.target.value
@@ -1278,23 +1369,16 @@ function Administracion({
             <div className="admin-form-footer">
 
               {guardado && (
-
                 <span className="saved-message">
-
                   ✓ Configuración guardada
-
                 </span>
-
               )}
-
 
               <button
                 type="submit"
                 className="btn-save-admin"
               >
-
                 Guardar configuración
-
               </button>
 
             </div>
@@ -1350,13 +1434,402 @@ function Administracion({
                   "1.5",
               }}
             >
-
-              Genera un PDF con el resumen y
-              detalle de los turnos de la
-              quincena actual.
-
+              Selecciona la quincena que deseas
+              consultar. El reporte muestra los
+              días exactos trabajados por cada
+              persona.
             </p>
 
+
+            {/* =================================================
+                MES
+            ================================================= */}
+
+            <div
+              style={{
+                marginBottom:
+                  "14px",
+              }}
+            >
+
+              <label
+                style={{
+                  display:
+                    "block",
+                  marginBottom:
+                    "6px",
+                  fontSize:
+                    "13px",
+                  fontWeight:
+                    "700",
+                  color:
+                    "#344054",
+                }}
+              >
+                Mes del reporte
+              </label>
+
+              <input
+                type="month"
+                value={
+                  mesReporte
+                }
+                onChange={(e) =>
+                  setMesReporte(
+                    e.target.value
+                  )
+                }
+                style={{
+                  width:
+                    "100%",
+                  boxSizing:
+                    "border-box",
+                  border:
+                    "1px solid #d0d5dd",
+                  borderRadius:
+                    "10px",
+                  padding:
+                    "11px 12px",
+                  fontSize:
+                    "14px",
+                }}
+              />
+
+            </div>
+
+
+            {/* =================================================
+                QUINCENA
+            ================================================= */}
+
+            <div
+              style={{
+                marginBottom:
+                  "14px",
+              }}
+            >
+
+              <label
+                style={{
+                  display:
+                    "block",
+                  marginBottom:
+                    "6px",
+                  fontSize:
+                    "13px",
+                  fontWeight:
+                    "700",
+                  color:
+                    "#344054",
+                }}
+              >
+                Quincena
+              </label>
+
+              <select
+                value={
+                  quincenaReporte
+                }
+                onChange={(e) =>
+                  setQuincenaReporte(
+                    e.target.value
+                  )
+                }
+                style={{
+                  width:
+                    "100%",
+                  boxSizing:
+                    "border-box",
+                  border:
+                    "1px solid #d0d5dd",
+                  borderRadius:
+                    "10px",
+                  padding:
+                    "11px 12px",
+                  fontSize:
+                    "14px",
+                  background:
+                    "#fff",
+                }}
+              >
+
+                <option value="primera">
+                  Primera quincena — 1 al 15
+                </option>
+
+                <option value="segunda">
+                  Segunda quincena — 16 al último día
+                </option>
+
+              </select>
+
+            </div>
+
+
+            {/* =================================================
+                PERÍODO
+            ================================================= */}
+
+            <div
+              style={{
+                marginBottom:
+                  "16px",
+                padding:
+                  "12px 14px",
+                borderRadius:
+                  "10px",
+                background:
+                  "#f2f4f7",
+                border:
+                  "1px solid #eaecf0",
+              }}
+            >
+
+              <div
+                style={{
+                  fontSize:
+                    "12px",
+                  color:
+                    "#667085",
+                  marginBottom:
+                    "4px",
+                  fontWeight:
+                    "600",
+                }}
+              >
+                PERÍODO SELECCIONADO
+              </div>
+
+              <div
+                style={{
+                  fontSize:
+                    "15px",
+                  color:
+                    "#101828",
+                  fontWeight:
+                    "700",
+                  textTransform:
+                    "capitalize",
+                }}
+              >
+                {obtenerTextoPeriodo()}
+              </div>
+
+            </div>
+
+
+            {/* =================================================
+                ESTADO
+            ================================================= */}
+
+            {cargandoTurnos && (
+              <div
+                style={{
+                  marginBottom:
+                    "14px",
+                  padding:
+                    "10px",
+                  borderRadius:
+                    "8px",
+                  background:
+                    "#f2f4f7",
+                  fontSize:
+                    "13px",
+                  color:
+                    "#667085",
+                }}
+              >
+                Cargando turnos reales...
+              </div>
+            )}
+
+
+            {errorTurnos && (
+              <div
+                style={{
+                  marginBottom:
+                    "14px",
+                  padding:
+                    "10px",
+                  borderRadius:
+                    "8px",
+                  background:
+                    "#fef3f2",
+                  color:
+                    "#b42318",
+                  fontSize:
+                    "13px",
+                }}
+              >
+                {errorTurnos}
+              </div>
+            )}
+
+
+            {/* =================================================
+                RESUMEN EN PANTALLA
+            ================================================= */}
+
+            <div
+              style={{
+                display:
+                  "grid",
+                gridTemplateColumns:
+                  "repeat(3, 1fr)",
+                gap:
+                  "8px",
+                marginBottom:
+                  "16px",
+              }}
+            >
+
+              <div
+                style={{
+                  padding:
+                    "10px",
+                  borderRadius:
+                    "8px",
+                  background:
+                    "#f9fafb",
+                  textAlign:
+                    "center",
+                  border:
+                    "1px solid #eaecf0",
+                }}
+              >
+
+                <div
+                  style={{
+                    fontSize:
+                      "11px",
+                    color:
+                      "#667085",
+                  }}
+                >
+                  DÍA
+                </div>
+
+                <strong
+                  style={{
+                    fontSize:
+                      "18px",
+                  }}
+                >
+                  {totales.dia}
+                </strong>
+
+              </div>
+
+
+              <div
+                style={{
+                  padding:
+                    "10px",
+                  borderRadius:
+                    "8px",
+                  background:
+                    "#f9fafb",
+                  textAlign:
+                    "center",
+                  border:
+                    "1px solid #eaecf0",
+                }}
+              >
+
+                <div
+                  style={{
+                    fontSize:
+                      "11px",
+                    color:
+                      "#667085",
+                  }}
+                >
+                  NOCHE
+                </div>
+
+                <strong
+                  style={{
+                    fontSize:
+                      "18px",
+                  }}
+                >
+                  {totales.noche}
+                </strong>
+
+              </div>
+
+
+              <div
+                style={{
+                  padding:
+                    "10px",
+                  borderRadius:
+                    "8px",
+                  background:
+                    "#f9fafb",
+                  textAlign:
+                    "center",
+                    border:
+                    "1px solid #eaecf0",
+                }}
+              >
+
+                <div
+                  style={{
+                    fontSize:
+                      "11px",
+                    color:
+                      "#667085",
+                  }}
+                >
+                  TOTAL
+                </div>
+
+                <strong
+                  style={{
+                    fontSize:
+                      "18px",
+                  }}
+                >
+                  {totales.total}
+                </strong>
+
+              </div>
+
+            </div>
+
+
+            {/* =================================================
+                INFORMACIÓN
+            ================================================= */}
+
+            <div
+              style={{
+                marginBottom:
+                  "16px",
+                fontSize:
+                  "13px",
+                color:
+                  "#667085",
+              }}
+            >
+
+              <strong>
+                {trabajadores.length}
+              </strong>{" "}
+              trabajadores registrados
+              {" · "}
+              <strong>
+                {turnosPeriodo.length}
+              </strong>{" "}
+              turnos en este período.
+
+            </div>
+
+
+            {/* =================================================
+                BOTÓN PDF
+            ================================================= */}
 
             <button
               type="button"
@@ -1364,7 +1837,8 @@ function Administracion({
                 generarPDF
               }
               disabled={
-                generandoPDF
+                generandoPDF ||
+                cargandoTurnos
               }
               style={{
                 width:
@@ -1376,7 +1850,8 @@ function Administracion({
                 padding:
                   "13px 16px",
                 background:
-                  generandoPDF
+                  generandoPDF ||
+                  cargandoTurnos
                     ? "#98a2b3"
                     : "#175cd3",
                 color:
@@ -1386,7 +1861,8 @@ function Administracion({
                 fontWeight:
                   "700",
                 cursor:
-                  generandoPDF
+                  generandoPDF ||
+                  cargandoTurnos
                     ? "not-allowed"
                     : "pointer",
               }}
@@ -1394,9 +1870,51 @@ function Administracion({
 
               {generandoPDF
                 ? "Generando PDF..."
-                : "📄 Generar PDF de turnos"
-              }
+                : cargandoTurnos
+                  ? "Cargando turnos..."
+                  : "📄 Generar PDF de turnos"}
 
+            </button>
+
+
+            {/* =================================================
+                ACTUALIZAR
+            ================================================= */}
+
+            <button
+              type="button"
+              onClick={
+                cargarTurnosReales
+              }
+              disabled={
+                cargandoTurnos
+              }
+              style={{
+                width:
+                  "100%",
+                marginTop:
+                  "8px",
+                border:
+                  "1px solid #d0d5dd",
+                borderRadius:
+                  "10px",
+                padding:
+                  "11px 16px",
+                background:
+                  "#fff",
+                color:
+                  "#344054",
+                fontSize:
+                  "13px",
+                fontWeight:
+                  "600",
+                cursor:
+                  cargandoTurnos
+                    ? "not-allowed"
+                    : "pointer",
+              }}
+            >
+              ↻ Actualizar turnos
             </button>
 
           </div>
@@ -1406,9 +1924,7 @@ function Administracion({
       </div>
 
     </main>
-
   );
-
 }
 
 export default Administracion;
