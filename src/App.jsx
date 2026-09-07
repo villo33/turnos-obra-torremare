@@ -1748,7 +1748,11 @@ function App() {
 
 
         return (
-          <Administracion />
+          <Administracion
+         trabajadores={trabajadores}
+         turnos={turnos}
+         />
+          
         );
 
 
