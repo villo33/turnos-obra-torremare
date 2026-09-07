@@ -12,8 +12,8 @@ import {
 
 import {
   crearNotificacionHorario,
+  enviarNotificacionPush,
 } from "../services/notificacionesService";
-
 
 function CalendarioPage({
   trabajadores = [],
@@ -241,15 +241,15 @@ function CalendarioPage({
 
       /* =================================================
          CREAR NOTIFICACIÓN PARA EL TRABAJADOR
-         
+
          SOLO SE ENVÍA SI:
-         
+
          1. Es un turno nuevo.
          2. Se cambió el tipo de turno.
-         
+
          Si el administrador vuelve a pulsar el mismo
          turno, no generamos una notificación innecesaria.
-         
+
          La agrupación de varios días y la creación de
          una nueva notificación después de una confirmación
          se controla dentro de notificacionesService.js.
@@ -257,48 +257,47 @@ function CalendarioPage({
 
       if (!eraMismoTurno) {
 
-        try {
-
-          const trabajador =
-            trabajadores.find(
-              (item) =>
-                String(item.id) ===
-                String(trabajadorId)
-            );
+        const trabajador =
+          trabajadores.find(
+            (item) =>
+              String(item.id) ===
+              String(trabajadorId)
+          );
 
 
-          if (!trabajador) {
+        if (!trabajador) {
 
-            console.error(
-              "❌ No se encontró el trabajador seleccionado:",
-              trabajadorId
-            );
+          console.error(
+            "❌ No se encontró el trabajador seleccionado:",
+            trabajadorId
+          );
 
-          } else if (!trabajador.user_id) {
+        } else if (!trabajador.user_id) {
 
-            console.error(
-              "❌ El trabajador no tiene user_id:",
-              trabajador
-            );
+          console.error(
+            "❌ El trabajador no tiene user_id:",
+            trabajador
+          );
 
-          } else {
+        } else {
 
-            console.log(
-              "👤 Trabajador para notificación:",
-              {
-                id: trabajador.id,
-                nombre: trabajador.nombre,
-                user_id: trabajador.user_id,
-              }
-            );
+          console.log(
+            "👤 Trabajador para notificación:",
+            {
+              id: trabajador.id,
+              nombre: trabajador.nombre,
+              user_id: trabajador.user_id,
+            }
+          );
 
 
-            /* =============================================
-               LA AUTENTICACIÓN Y LA CREACIÓN DE LA
-               NOTIFICACIÓN SE MANEJAN EN EL SERVICE.
-               
-               NO USAMOS supabase DIRECTAMENTE AQUÍ.
-            ============================================= */
+          /* =============================================
+             🔔 NOTIFICACIÓN DE LA CAMPANA
+
+             ESTA PARTE SE MANTIENE.
+          ============================================= */
+
+          try {
 
             await crearNotificacionHorario({
 
@@ -316,35 +315,82 @@ function CalendarioPage({
 
             });
 
-
             console.log(
-              "🔔 Notificación creada/actualizada correctamente para:",
-              trabajador.nombre
+              "✅ Notificación de campana creada/actualizada correctamente."
+            );
+
+          } catch (errorNotificacion) {
+
+            console.error(
+              "⚠️ El turno se guardó, pero no se pudo crear la notificación de campana:",
+              errorNotificacion
             );
           }
 
-        } catch (errorNotificacion) {
 
-          /*
-            MUY IMPORTANTE:
+          /* =============================================
+             📱 NOTIFICACIÓN PUSH
 
-            Si falla la notificación,
-            el turno ya está guardado.
+             SI EL PUSH FALLA, EL TURNO NO SE REVIERTE.
+          ============================================= */
 
-            Por eso NO lanzamos nuevamente
-            este error y NO eliminamos el turno.
-          */
+          try {
 
-          console.error(
-            "⚠️ El turno se guardó, pero no se pudo crear la notificación:",
-            errorNotificacion
+            const resultadoPush =
+              await enviarNotificacionPush({
+
+                userId:
+                  trabajador.user_id,
+
+                title:
+                  turnoExistente
+                    ? "🔄 Turno actualizado"
+                    : "🔔 Nuevo turno asignado",
+
+                message:
+                  turnoExistente
+                    ? `Tu turno del ${fechaKey} fue cambiado a ${tipo}.`
+                    : `Se te asignó un turno para el ${fechaKey}: ${tipo}.`,
+
+                url:
+                  "/",
+
+              });
+
+
+            console.log(
+              "✅ Push enviado correctamente:",
+              resultadoPush
+            );
+
+          } catch (errorPush) {
+
+            /*
+              IMPORTANTE:
+
+              El turno YA fue guardado.
+
+              Si el Push falla por cualquier motivo,
+              NO eliminamos ni revertimos el turno.
+            */
+
+            console.error(
+              "⚠️ El turno se guardó, pero no se pudo enviar el Push:",
+              errorPush
+            );
+          }
+
+
+          console.log(
+            "🔔 Proceso de notificación terminado para:",
+            trabajador.nombre
           );
         }
 
       } else {
 
         console.log(
-          "ℹ️ El turno ya tenía el mismo tipo. No se creó una nueva notificación."
+          "ℹ️ El turno ya tenía el mismo tipo. No se creó una nueva notificación ni se envió Push."
         );
       }
 

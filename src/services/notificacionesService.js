@@ -1522,3 +1522,148 @@ export async function activarNotificacionesPush() {
     return null;
   }
 }
+
+/* =====================================================
+   ENVIAR NOTIFICACIÓN PUSH
+===================================================== */
+
+export async function enviarNotificacionPush({
+  userId,
+  title = "Torre Mare",
+  message = "Tienes una nueva notificación.",
+  url = "/",
+} = {}) {
+
+  /* -------------------------------------------------
+     VALIDAR USUARIO
+  ------------------------------------------------- */
+
+  if (!userId) {
+    throw new Error(
+      "Falta el user_id del destinatario."
+    );
+  }
+
+  const trabajadorUUID =
+    String(userId).trim();
+
+  if (!trabajadorUUID) {
+    throw new Error(
+      "El user_id del destinatario no es válido."
+    );
+  }
+
+
+  console.log(
+    "📲 Enviando notificación Push..."
+  );
+
+  console.log(
+    "👤 Destinatario:",
+    trabajadorUUID
+  );
+
+  console.log(
+    "📌 Título:",
+    title
+  );
+
+  console.log(
+    "💬 Mensaje:",
+    message
+  );
+
+
+  /* -------------------------------------------------
+     LLAMAR EDGE FUNCTION
+  ------------------------------------------------- */
+
+  const {
+    data,
+    error,
+  } = await supabase.functions.invoke(
+    "enviar-push",
+    {
+      body: {
+        user_id:
+          trabajadorUUID,
+
+        title:
+          title,
+
+        message:
+          message,
+
+        url:
+          url,
+      },
+    }
+  );
+
+
+  /* -------------------------------------------------
+     MANEJAR ERROR
+  ------------------------------------------------- */
+
+  if (error) {
+
+    console.error(
+      "=========================================="
+    );
+
+    console.error(
+      "❌ ERROR ENVIANDO NOTIFICACIÓN PUSH"
+    );
+
+    console.error(
+      "Mensaje:",
+      error.message
+    );
+
+    console.error(
+      "Detalles:",
+      error
+    );
+
+    console.error(
+      "Destinatario:",
+      trabajadorUUID
+    );
+
+    console.error(
+      "=========================================="
+    );
+
+    throw error;
+  }
+
+
+  /* -------------------------------------------------
+     COMPROBAR RESPUESTA
+  ------------------------------------------------- */
+
+  console.log(
+    "=========================================="
+  );
+
+  console.log(
+    "✅ NOTIFICACIÓN PUSH PROCESADA"
+  );
+
+  console.log(
+    "👤 Destinatario:",
+    trabajadorUUID
+  );
+
+  console.log(
+    "📦 Respuesta:",
+    data
+  );
+
+  console.log(
+    "=========================================="
+  );
+
+
+  return data;
+}
