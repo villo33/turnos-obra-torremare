@@ -15,12 +15,76 @@ import {
   enviarNotificacionPush,
 } from "../services/notificacionesService";
 
+
+/* =====================================================
+   CONTROL DE PUSH AGRUPADOS
+
+   Evita enviar una notificación Push por cada turno.
+
+   Si se asignan varios turnos al mismo trabajador
+   dentro de 5 minutos, solamente se envía una Push.
+
+   La campanita de la aplicación sigue funcionando
+   normalmente.
+===================================================== */
+
+const TIEMPO_AGRUPACION_PUSH = 5 * 60 * 1000;
+
+const ultimoPushPorTrabajador = new Map();
+
+
+/* =====================================================
+   COMPROBAR SI SE PUEDE ENVIAR PUSH
+===================================================== */
+
+const puedeEnviarPush = (userId) => {
+  if (!userId) {
+    return false;
+  }
+
+  const clave = String(userId);
+
+  const ultimoEnvio =
+    ultimoPushPorTrabajador.get(clave);
+
+  if (!ultimoEnvio) {
+    return true;
+  }
+
+  return (
+    Date.now() - ultimoEnvio >=
+    TIEMPO_AGRUPACION_PUSH
+  );
+};
+
+
+/* =====================================================
+   REGISTRAR QUE SE ENVIÓ PUSH
+===================================================== */
+
+const registrarEnvioPush = (userId) => {
+  if (!userId) {
+    return;
+  }
+
+  ultimoPushPorTrabajador.set(
+    String(userId),
+    Date.now()
+  );
+};
+
+
+/* =====================================================
+   COMPONENTE
+===================================================== */
+
 function CalendarioPage({
   trabajadores = [],
   turnos = {},
   setTurnos,
   esAdministrador = false,
 }) {
+
   /* =====================================================
      FECHA INICIAL DEL CALENDARIO
   ===================================================== */
@@ -30,7 +94,8 @@ function CalendarioPage({
 
     fecha.setHours(0, 0, 0, 0);
 
-    const diaSemana = fecha.getDay();
+    const diaSemana =
+      fecha.getDay();
 
     const diferencia =
       diaSemana === 0
@@ -43,6 +108,7 @@ function CalendarioPage({
 
     return fecha;
   };
+
 
   const [fechaInicio, setFechaInicio] =
     useState(obtenerLunesActual);
@@ -70,6 +136,7 @@ function CalendarioPage({
   ===================================================== */
 
   const convertirFecha = (fecha) => {
+
     if (typeof fecha === "string") {
       return fecha;
     }
@@ -91,11 +158,15 @@ function CalendarioPage({
   ===================================================== */
 
   useEffect(() => {
+
     async function cargarTurnos() {
+
       try {
+
         setCargandoTurnos(true);
 
-        const datos = await obtenerTurnos();
+        const datos =
+          await obtenerTurnos();
 
         console.log(
           "TURNOS DESDE SUPABASE:",
@@ -105,18 +176,31 @@ function CalendarioPage({
         const turnosOrganizados = {};
 
         datos.forEach((turno) => {
-          if (!turnosOrganizados[turno.fecha]) {
-            turnosOrganizados[turno.fecha] = {};
+
+          if (
+            !turnosOrganizados[
+              turno.fecha
+            ]
+          ) {
+            turnosOrganizados[
+              turno.fecha
+            ] = {};
           }
 
-          turnosOrganizados[turno.fecha][
+          turnosOrganizados[
+            turno.fecha
+          ][
             turno.trabajador_id
           ] = turno.tipo;
+
         });
 
-        setTurnos(turnosOrganizados);
+        setTurnos(
+          turnosOrganizados
+        );
 
       } catch (error) {
+
         console.error(
           "Error cargando turnos desde Supabase:",
           error
@@ -127,11 +211,14 @@ function CalendarioPage({
         );
 
       } finally {
+
         setCargandoTurnos(false);
+
       }
     }
 
     cargarTurnos();
+
   }, [setTurnos]);
 
 
@@ -143,12 +230,16 @@ function CalendarioPage({
     fecha,
     trabajador
   ) => {
+
     if (!esAdministrador) {
       return;
     }
 
     setFechaSeleccionada(fecha);
-    setTrabajadorSeleccionado(trabajador);
+
+    setTrabajadorSeleccionado(
+      trabajador
+    );
   };
 
 
@@ -161,6 +252,7 @@ function CalendarioPage({
     trabajadorId,
     tipo
   ) => {
+
     if (!esAdministrador) {
       return;
     }
@@ -169,13 +261,18 @@ function CalendarioPage({
       convertirFecha(fecha);
 
     try {
+
       setGuardando(true);
 
       console.log(
         "Guardando turno:",
         {
-          trabajador_id: trabajadorId,
-          fecha: fechaKey,
+          trabajador_id:
+            trabajadorId,
+
+          fecha:
+            fechaKey,
+
           tipo,
         }
       );
@@ -191,20 +288,26 @@ function CalendarioPage({
       const turnoExistente =
         turnosExistentes.find(
           (turno) =>
-            String(turno.trabajador_id) ===
-              String(trabajadorId) &&
-            turno.fecha === fechaKey
+            String(
+              turno.trabajador_id
+            ) ===
+              String(
+                trabajadorId
+              ) &&
+            turno.fecha ===
+              fechaKey
         );
 
 
-      /*
-         Guardamos esta información antes de modificar
-         el turno para saber si realmente hubo un cambio.
-      */
+      /* =================================================
+         COMPROBAR SI ES EL MISMO TURNO
+      ================================================= */
 
       const eraMismoTurno =
-        turnoExistente &&
-        turnoExistente.tipo === tipo;
+        Boolean(
+          turnoExistente &&
+          turnoExistente.tipo === tipo
+        );
 
 
       /* =================================================
@@ -232,27 +335,25 @@ function CalendarioPage({
         );
 
         await crearTurno({
-          trabajador_id: trabajadorId,
-          fecha: fechaKey,
+          trabajador_id:
+            trabajadorId,
+
+          fecha:
+            fechaKey,
+
           tipo,
         });
+
       }
 
 
       /* =================================================
-         CREAR NOTIFICACIÓN PARA EL TRABAJADOR
+         NOTIFICACIONES
 
-         SOLO SE ENVÍA SI:
+         LA CAMPANITA SE MANTIENE.
 
-         1. Es un turno nuevo.
-         2. Se cambió el tipo de turno.
-
-         Si el administrador vuelve a pulsar el mismo
-         turno, no generamos una notificación innecesaria.
-
-         La agrupación de varios días y la creación de
-         una nueva notificación después de una confirmación
-         se controla dentro de notificacionesService.js.
+         EL PUSH SE AGRUPA POR TRABAJADOR DURANTE
+         5 MINUTOS.
       ================================================= */
 
       if (!eraMismoTurno) {
@@ -265,6 +366,10 @@ function CalendarioPage({
           );
 
 
+        /* =================================================
+           COMPROBAR TRABAJADOR
+        ================================================= */
+
         if (!trabajador) {
 
           console.error(
@@ -272,7 +377,9 @@ function CalendarioPage({
             trabajadorId
           );
 
-        } else if (!trabajador.user_id) {
+        } else if (
+          !trabajador.user_id
+        ) {
 
           console.error(
             "❌ El trabajador no tiene user_id:",
@@ -284,9 +391,14 @@ function CalendarioPage({
           console.log(
             "👤 Trabajador para notificación:",
             {
-              id: trabajador.id,
-              nombre: trabajador.nombre,
-              user_id: trabajador.user_id,
+              id:
+                trabajador.id,
+
+              nombre:
+                trabajador.nombre,
+
+              user_id:
+                trabajador.user_id,
             }
           );
 
@@ -294,7 +406,7 @@ function CalendarioPage({
           /* =============================================
              🔔 NOTIFICACIÓN DE LA CAMPANA
 
-             ESTA PARTE SE MANTIENE.
+             ESTA PARTE NO SE MODIFICA.
           ============================================= */
 
           try {
@@ -319,65 +431,93 @@ function CalendarioPage({
               "✅ Notificación de campana creada/actualizada correctamente."
             );
 
-          } catch (errorNotificacion) {
+          } catch (
+            errorNotificacion
+          ) {
 
             console.error(
               "⚠️ El turno se guardó, pero no se pudo crear la notificación de campana:",
               errorNotificacion
             );
+
           }
 
 
           /* =============================================
-             📱 NOTIFICACIÓN PUSH
+             📱 NOTIFICACIÓN PUSH AGRUPADA
 
-             SI EL PUSH FALLA, EL TURNO NO SE REVIERTE.
+             NO SE ENVÍA UNA PUSH POR CADA TURNO.
+
+             El mismo trabajador recibirá como máximo
+             una Push cada 5 minutos.
           ============================================= */
 
-          try {
+          const userId =
+            trabajador.user_id;
 
-            const resultadoPush =
-              await enviarNotificacionPush({
+          if (
+            puedeEnviarPush(
+              userId
+            )
+          ) {
 
-                userId:
-                  trabajador.user_id,
+            try {
 
-                title:
-                  turnoExistente
-                    ? "🔄 Turno actualizado"
-                    : "🔔 Nuevo turno asignado",
+              registrarEnvioPush(
+                userId
+              );
 
-                message:
-                  turnoExistente
-                    ? `Tu turno del ${fechaKey} fue cambiado a ${tipo}.`
-                    : `Se te asignó un turno para el ${fechaKey}: ${tipo}.`,
 
-                url:
-                  "/",
+              const resultadoPush =
+                await enviarNotificacionPush({
 
-              });
+                  userId:
+                    userId,
 
+                  title:
+                    "🔔 Torre Mare",
+
+                  message:
+                    "Tienes nuevos cambios en tus turnos. Revisa el calendario.",
+
+                  url:
+                    "/",
+
+                });
+
+
+              console.log(
+                "✅ Push agrupado enviado correctamente:",
+                resultadoPush
+              );
+
+            } catch (
+              errorPush
+            ) {
+
+              console.error(
+                "⚠️ El turno se guardó, pero no se pudo enviar el Push:",
+                errorPush
+              );
+
+
+              /*
+                Si el Push falla, permitimos que el
+                siguiente intento vuelva a enviarlo.
+              */
+
+              ultimoPushPorTrabajador.delete(
+                String(userId)
+              );
+
+            }
+
+          } else {
 
             console.log(
-              "✅ Push enviado correctamente:",
-              resultadoPush
+              "🔕 Push agrupado omitido: ya se envió una Push reciente a este trabajador."
             );
 
-          } catch (errorPush) {
-
-            /*
-              IMPORTANTE:
-
-              El turno YA fue guardado.
-
-              Si el Push falla por cualquier motivo,
-              NO eliminamos ni revertimos el turno.
-            */
-
-            console.error(
-              "⚠️ El turno se guardó, pero no se pudo enviar el Push:",
-              errorPush
-            );
           }
 
 
@@ -385,6 +525,7 @@ function CalendarioPage({
             "🔔 Proceso de notificación terminado para:",
             trabajador.nombre
           );
+
         }
 
       } else {
@@ -392,6 +533,7 @@ function CalendarioPage({
         console.log(
           "ℹ️ El turno ya tenía el mismo tipo. No se creó una nueva notificación ni se envió Push."
         );
+
       }
 
 
@@ -399,15 +541,20 @@ function CalendarioPage({
          ACTUALIZAR INMEDIATAMENTE EL ESTADO LOCAL
       ================================================= */
 
-      setTurnos((actuales) => ({
-        ...actuales,
+      setTurnos(
+        (actuales) => ({
+          ...actuales,
 
-        [fechaKey]: {
-          ...(actuales[fechaKey] || {}),
+          [fechaKey]: {
+            ...(actuales[
+              fechaKey
+            ] || {}),
 
-          [trabajadorId]: tipo,
-        },
-      }));
+            [trabajadorId]:
+              tipo,
+          },
+        })
+      );
 
 
       /* =================================================
@@ -436,7 +583,9 @@ function CalendarioPage({
       );
 
     } finally {
+
       setGuardando(false);
+
     }
   };
 
@@ -449,6 +598,7 @@ function CalendarioPage({
     fecha,
     trabajadorId
   ) => {
+
     if (!esAdministrador) {
       return;
     }
@@ -464,9 +614,14 @@ function CalendarioPage({
       const turno =
         datos.find(
           (item) =>
-            String(item.trabajador_id) ===
-              String(trabajadorId) &&
-            item.fecha === fechaKey
+            String(
+              item.trabajador_id
+            ) ===
+              String(
+                trabajadorId
+              ) &&
+            item.fecha ===
+              fechaKey
         );
 
 
@@ -489,40 +644,56 @@ function CalendarioPage({
          ACTUALIZAR INMEDIATAMENTE EL ESTADO LOCAL
       ================================================= */
 
-      setTurnos((actuales) => {
+      setTurnos(
+        (actuales) => {
 
-        const copia = {
-          ...actuales,
-        };
+          const copia = {
+            ...actuales,
+          };
 
 
-        if (!copia[fechaKey]) {
+          if (
+            !copia[fechaKey]
+          ) {
+
+            return copia;
+
+          }
+
+
+          const dia = {
+            ...copia[fechaKey],
+          };
+
+
+          delete dia[
+            trabajadorId
+          ];
+
+
+          if (
+            Object.keys(
+              dia
+            ).length === 0
+          ) {
+
+            delete copia[
+              fechaKey
+            ];
+
+          } else {
+
+            copia[
+              fechaKey
+            ] = dia;
+
+          }
+
+
           return copia;
+
         }
-
-
-        const dia = {
-          ...copia[fechaKey],
-        };
-
-
-        delete dia[trabajadorId];
-
-
-        if (
-          Object.keys(dia).length === 0
-        ) {
-
-          delete copia[fechaKey];
-
-        } else {
-
-          copia[fechaKey] = dia;
-        }
-
-
-        return copia;
-      });
+      );
 
 
       console.log(
@@ -542,6 +713,7 @@ function CalendarioPage({
           "Error desconocido"
         }`
       );
+
     }
   };
 
@@ -551,8 +723,15 @@ function CalendarioPage({
   ===================================================== */
 
   const cerrarModal = () => {
-    setFechaSeleccionada(null);
-    setTrabajadorSeleccionado(null);
+
+    setFechaSeleccionada(
+      null
+    );
+
+    setTrabajadorSeleccionado(
+      null
+    );
+
   };
 
 
@@ -563,20 +742,29 @@ function CalendarioPage({
   if (cargandoTurnos) {
 
     return (
+
       <main className="dashboard">
 
         <div
           style={{
-            padding: "60px",
-            textAlign: "center",
-            color: "#667085",
+            padding:
+              "60px",
+
+            textAlign:
+              "center",
+
+            color:
+              "#667085",
           }}
         >
 
           <div
             style={{
-              fontSize: "28px",
-              marginBottom: "10px",
+              fontSize:
+                "28px",
+
+              marginBottom:
+                "10px",
             }}
           >
             ◌
@@ -593,7 +781,9 @@ function CalendarioPage({
         </div>
 
       </main>
+
     );
+
   }
 
 
@@ -618,10 +808,12 @@ function CalendarioPage({
           </h3>
 
           <p>
+
             {esAdministrador
               ? "Organiza y asigna las jornadas de día y noche de todo el equipo."
               : "Consulta las jornadas de día y noche de todo el equipo."
             }
+
           </p>
 
         </div>
@@ -651,13 +843,33 @@ function CalendarioPage({
       ================================================= */}
 
       <Calendario
-        trabajadores={trabajadores}
-        turnos={turnos}
-        fechaInicio={fechaInicio}
-        setFechaInicio={setFechaInicio}
-        onSeleccionarTurno={seleccionarTurno}
-        onEliminarTurno={eliminarTurno}
-        puedeEditar={esAdministrador}
+        trabajadores={
+          trabajadores
+        }
+
+        turnos={
+          turnos
+        }
+
+        fechaInicio={
+          fechaInicio
+        }
+
+        setFechaInicio={
+          setFechaInicio
+        }
+
+        onSeleccionarTurno={
+          seleccionarTurno
+        }
+
+        onEliminarTurno={
+          eliminarTurno
+        }
+
+        puedeEditar={
+          esAdministrador
+        }
       />
 
 
@@ -666,9 +878,17 @@ function CalendarioPage({
       ================================================= */}
 
       <ResumenTurnos
-        trabajadores={trabajadores}
-        turnos={turnos}
-        fechaInicio={fechaInicio}
+        trabajadores={
+          trabajadores
+        }
+
+        turnos={
+          turnos
+        }
+
+        fechaInicio={
+          fechaInicio
+        }
       />
 
 
@@ -682,7 +902,9 @@ function CalendarioPage({
 
           <div
             className="modal-overlay"
-            onClick={cerrarModal}
+            onClick={
+              cerrarModal
+            }
           >
 
             <div
@@ -701,7 +923,9 @@ function CalendarioPage({
                   </span>
 
                   <h3>
-                    {trabajadorSeleccionado.nombre}
+                    {
+                      trabajadorSeleccionado.nombre
+                    }
                   </h3>
 
                 </div>
@@ -710,8 +934,12 @@ function CalendarioPage({
                 <button
                   type="button"
                   className="modal-close"
-                  onClick={cerrarModal}
-                  disabled={guardando}
+                  onClick={
+                    cerrarModal
+                  }
+                  disabled={
+                    guardando
+                  }
                 >
                   ×
                 </button>
@@ -723,9 +951,12 @@ function CalendarioPage({
 
                 <div className="modal-avatar">
 
-                  {trabajadorSeleccionado.nombre
-                    ?.charAt(0)
-                    ?.toUpperCase()}
+                  {
+                    trabajadorSeleccionado
+                      .nombre
+                      ?.charAt(0)
+                      ?.toUpperCase()
+                  }
 
                 </div>
 
@@ -733,12 +964,16 @@ function CalendarioPage({
                 <div>
 
                   <strong>
-                    {trabajadorSeleccionado.nombre}
+                    {
+                      trabajadorSeleccionado.nombre
+                    }
                   </strong>
 
                   <span>
-                    {trabajadorSeleccionado.cargo ||
-                      "Vigilante"}
+                    {
+                      trabajadorSeleccionado.cargo ||
+                      "Vigilante"
+                    }
                   </span>
 
                 </div>
@@ -754,14 +989,21 @@ function CalendarioPage({
 
                 <strong>
 
-                  {fechaSeleccionada.toLocaleDateString(
-                    "es-CO",
-                    {
-                      weekday: "long",
-                      day: "numeric",
-                      month: "long",
-                    }
-                  )}
+                  {
+                    fechaSeleccionada.toLocaleDateString(
+                      "es-CO",
+                      {
+                        weekday:
+                          "long",
+
+                        day:
+                          "numeric",
+
+                        month:
+                          "long",
+                      }
+                    )
+                  }
 
                 </strong>
 
@@ -777,7 +1019,9 @@ function CalendarioPage({
                 <button
                   type="button"
                   className="turno-option turno-dia"
-                  disabled={guardando}
+                  disabled={
+                    guardando
+                  }
                   onClick={() =>
                     guardarTurno(
                       fechaSeleccionada,
@@ -817,7 +1061,9 @@ function CalendarioPage({
                 <button
                   type="button"
                   className="turno-option turno-noche"
-                  disabled={guardando}
+                  disabled={
+                    guardando
+                  }
                   onClick={() =>
                     guardarTurno(
                       fechaSeleccionada,
@@ -857,8 +1103,12 @@ function CalendarioPage({
                 <button
                   type="button"
                   className="modal-cancel"
-                  onClick={cerrarModal}
-                  disabled={guardando}
+                  onClick={
+                    cerrarModal
+                  }
+                  disabled={
+                    guardando
+                  }
                 >
                   Cancelar
                 </button>
@@ -872,6 +1122,7 @@ function CalendarioPage({
         )}
 
     </main>
+
   );
 }
 

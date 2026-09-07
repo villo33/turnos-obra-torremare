@@ -1411,3 +1411,238 @@
     font-size: 5px;
   }
 }
+
+/* =====================================================
+   AJUSTE DEL MODAL DE TURNOS - SOLO TELÉFONO
+   No modifica la visualización de PC
+===================================================== */
+
+@media (max-width: 600px) {
+
+  .modal-overlay {
+    padding: 10px;
+    align-items: center;
+    overflow-y: auto;
+    box-sizing: border-box;
+  }
+
+  /* El JSX utiliza .modal-turno */
+  .modal-turno {
+    width: 100%;
+    max-width: 430px;
+    max-height: calc(100dvh - 20px);
+
+    background: #ffffff;
+    border-radius: 14px;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    box-sizing: border-box;
+
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .modal-header {
+    padding: 16px 17px;
+    gap: 10px;
+  }
+
+  .modal-header > div {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .modal-header h3 {
+    margin-top: 4px;
+    font-size: 16px;
+    line-height: 20px;
+
+    overflow-wrap: anywhere;
+  }
+
+  .modal-header button {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+  }
+
+  .modal-person {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 14px 17px;
+
+    box-sizing: border-box;
+  }
+
+  .modal-avatar {
+    width: 38px;
+    height: 38px;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+  }
+
+  .modal-person > div:last-child {
+    min-width: 0;
+  }
+
+  .modal-person strong,
+  .modal-person span {
+    display: block;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .modal-date {
+    padding: 13px 17px;
+
+    line-height: 18px;
+
+    overflow-wrap: anywhere;
+  }
+
+  .turno-options {
+    padding: 14px 17px 7px;
+
+    gap: 9px;
+  }
+
+  .turno-option {
+    width: 100%;
+    min-height: 68px;
+
+    padding: 10px 11px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    border-radius: 10px;
+
+    box-sizing: border-box;
+  }
+
+  .turno-option-icon {
+    width: 38px;
+    height: 38px;
+
+    flex-shrink: 0;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 9px;
+
+    font-size: 18px;
+  }
+
+  .turno-option > div:nth-child(2) {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .turno-option strong {
+    display: block;
+
+    font-size: 11px;
+    line-height: 15px;
+
+    overflow-wrap: anywhere;
+  }
+
+  .turno-option span {
+    display: block;
+
+    margin-top: 2px;
+
+    font-size: 9px;
+    line-height: 13px;
+  }
+
+  .turno-option b {
+    flex-shrink: 0;
+
+    font-size: 20px;
+  }
+
+  .modal-footer {
+    padding: 7px 17px 17px;
+  }
+
+  .modal-cancel {
+    width: 100%;
+    min-height: 42px;
+
+    border-radius: 9px;
+  }
+}
+
+
+/* =====================================================
+   TELÉFONOS MUY PEQUEÑOS
+===================================================== */
+
+@media (max-width: 380px) {
+
+  .modal-overlay {
+    padding: 7px;
+  }
+
+  .modal-turno {
+    max-height: calc(100dvh - 14px);
+    border-radius: 12px;
+  }
+
+  .modal-header {
+    padding: 13px 14px;
+  }
+
+  .modal-header h3 {
+    font-size: 15px;
+  }
+
+  .modal-person {
+    padding: 11px 14px;
+  }
+
+  .modal-date {
+    padding: 11px 14px;
+    font-size: 10px;
+  }
+
+  .turno-options {
+    padding: 11px 14px 5px;
+    gap: 7px;
+  }
+
+  .turno-option {
+    min-height: 62px;
+    padding: 8px 9px;
+    gap: 8px;
+  }
+
+  .turno-option-icon {
+    width: 34px;
+    height: 34px;
+    font-size: 16px;
+  }
+
+  .turno-option strong {
+    font-size: 10px;
+  }
+
+  .turno-option span {
+    font-size: 8px;
+  }
+
+  .modal-footer {
+    padding: 5px 14px 14px;
+  }
+}
