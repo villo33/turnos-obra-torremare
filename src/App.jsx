@@ -2937,4 +2937,5 @@ function esAdministradorSeguro(perfil) {
 }
 
 
+
 export default App;

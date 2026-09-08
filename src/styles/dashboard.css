@@ -54,7 +54,9 @@
   margin-top: 3px;
 }
 
-/* MENU */
+/* =====================================================
+   MENU
+===================================================== */
 
 .menu {
   padding: 25px 14px;
@@ -77,7 +79,10 @@
   cursor: pointer;
   font-size: 13px;
   text-align: left;
-  transition: 0.2s ease;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .menu-item span {
@@ -96,7 +101,9 @@
   color: #ffffff;
 }
 
-/* SIDEBAR USER */
+/* =====================================================
+   SIDEBAR USER
+===================================================== */
 
 .sidebar-bottom {
   margin-top: auto;
@@ -193,6 +200,16 @@
   color: #667085;
   cursor: pointer;
   font-size: 18px;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.notification:hover {
+  background: #f8fafc;
+  border-color: #d0d5dd;
+  transform: translateY(-1px);
 }
 
 .profile {
@@ -204,6 +221,7 @@
 .profile strong {
   display: block;
   font-size: 12px;
+  color: #101828;
 }
 
 .profile span {
@@ -214,24 +232,50 @@
 }
 
 /* =====================================================
-   DASHBOARD
+   DASHBOARD PRINCIPAL
 ===================================================== */
 
 .dashboard {
   padding: 32px 38px 45px;
   max-width: 1500px;
   margin: 0 auto;
+  background: #f8fafc;
 }
+
+/* =====================================================
+   WELCOME
+===================================================== */
 
 .welcome {
   background: #ffffff;
   border: 1px solid #eaecf0;
-  border-radius: 14px;
+  border-radius: 16px;
   padding: 27px 30px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.04);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.welcome:hover {
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.07);
+  transform: translateY(-1px);
+}
+
+.welcome::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #175cd3;
 }
 
 .eyebrow {
@@ -246,23 +290,27 @@
   font-size: 24px;
   color: #101828;
   letter-spacing: -0.6px;
+  line-height: 1.2;
 }
 
 .welcome p {
-  margin-top: 5px;
+  margin-top: 6px;
   color: #667085;
   font-size: 13px;
+  line-height: 1.5;
 }
 
 .today-badge {
   width: 65px;
   height: 72px;
   border: 1px solid #eaecf0;
-  border-radius: 10px;
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  background: #f8fafc;
+  flex-shrink: 0;
 }
 
 .today-badge span {
@@ -298,20 +346,49 @@
 .stat-card {
   background: #ffffff;
   border: 1px solid #eaecf0;
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 19px;
   display: flex;
   align-items: center;
   gap: 13px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.04);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(16, 24, 40, 0.07);
+  border-color: #d0d5dd;
+}
+
+.stat-card::after {
+  content: "";
+  position: absolute;
+  width: 75px;
+  height: 75px;
+  right: -35px;
+  bottom: -35px;
+  border-radius: 50%;
+  background: #f8fafc;
+  pointer-events: none;
 }
 
 .stat-icon {
   width: 43px;
   height: 43px;
-  border-radius: 10px;
+  border-radius: 11px;
   display: grid;
   place-items: center;
   font-size: 18px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 2px 5px rgba(16, 24, 40, 0.04);
 }
 
 .stat-icon.blue {
@@ -367,8 +444,16 @@
 .panel {
   background: #ffffff;
   border: 1px solid #eaecf0;
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.04);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.panel:hover {
+  box-shadow: 0 8px 22px rgba(16, 24, 40, 0.06);
 }
 
 .panel-header {
@@ -378,6 +463,7 @@
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid #f2f4f7;
+  background: #ffffff;
 }
 
 .panel-label {
@@ -391,6 +477,8 @@
   margin-top: 4px;
   font-size: 15px;
   color: #101828;
+  font-weight: 700;
+  letter-spacing: -0.2px;
 }
 
 .text-button {
@@ -400,12 +488,22 @@
   font-size: 11px;
   cursor: pointer;
   font-weight: 600;
+  padding: 7px 10px;
+  border-radius: 7px;
+  transition: background 0.2s ease;
+}
+
+.text-button:hover {
+  background: #eff8ff;
 }
 
 .online-status {
   color: #027a48;
   font-size: 10px;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
 }
 
 .online-status i {
@@ -414,7 +512,8 @@
   height: 6px;
   border-radius: 50%;
   background: #12b76a;
-  margin-right: 4px;
+  margin-right: 5px;
+  animation: dashboardPulse 2s infinite;
 }
 
 /* =====================================================
@@ -431,15 +530,24 @@
   align-items: center;
   gap: 12px;
   border-bottom: 1px solid #f2f4f7;
+  transition: background 0.2s ease;
 }
 
 .shift-row:last-child {
   border-bottom: 0;
 }
 
+.shift-row:hover {
+  background: #f8fafc;
+}
+
 .date-box {
   width: 39px;
   text-align: center;
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 6px 3px;
+  flex-shrink: 0;
 }
 
 .date-box strong {
@@ -460,13 +568,16 @@
   height: 32px;
   border-radius: 8px;
   background: #f9fafb;
+  border: 1px solid #eaecf0;
   display: grid;
   place-items: center;
   font-size: 15px;
+  flex-shrink: 0;
 }
 
 .shift-info {
   flex: 1;
+  min-width: 0;
 }
 
 .shift-info strong {
@@ -487,16 +598,20 @@
   font-weight: 700;
   padding: 5px 8px;
   border-radius: 5px;
+  border: 1px solid transparent;
+  flex-shrink: 0;
 }
 
 .shift-status.día {
   color: #175cd3;
   background: #eff8ff;
+  border-color: #b2ddff;
 }
 
 .shift-status.noche {
   color: #6941c6;
   background: #f9f5ff;
+  border-color: #d9d6fe;
 }
 
 /* =====================================================
@@ -513,14 +628,20 @@
   align-items: center;
   gap: 11px;
   border-bottom: 1px solid #f2f4f7;
+  transition: background 0.2s ease;
 }
 
 .person-row:last-child {
   border-bottom: 0;
 }
 
+.person-row:hover {
+  background: #f8fafc;
+}
+
 .person-row > div:nth-child(2) {
   flex: 1;
+  min-width: 0;
 }
 
 .person-row strong {
@@ -543,6 +664,12 @@
   border-radius: 5px;
   font-size: 8px;
   font-weight: 700;
+  flex-shrink: 0;
+}
+
+.person-row .avatar {
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(16, 24, 40, 0.08);
 }
 
 /* =====================================================
@@ -583,6 +710,243 @@
   margin-top: 6px;
   color: #98a2b3;
   font-size: 12px;
+}
+
+/* =====================================================
+   INICIO — SECCIONES ACTUALES
+   Estas clases corresponden al Inicio.jsx actual.
+===================================================== */
+
+.dashboard-section {
+  background: #ffffff;
+  border: 1px solid #eaecf0;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.04);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.dashboard-section:hover {
+  box-shadow: 0 8px 22px rgba(16, 24, 40, 0.06);
+}
+
+.section-header {
+  min-height: 72px;
+  padding: 18px 23px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #f2f4f7;
+}
+
+.section-header > div:first-child {
+  min-width: 0;
+}
+
+.section-header h3 {
+  margin: 4px 0 0;
+  color: #101828;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+.section-count {
+  min-width: 30px;
+  height: 28px;
+  padding: 0 9px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #eff8ff;
+  color: #175cd3;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* =====================================================
+   TURNOS DE HOY
+===================================================== */
+
+.turnos-hoy-list {
+  padding: 8px 23px 14px;
+}
+
+.turno-hoy-card {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-height: 70px;
+  padding: 9px 5px;
+  border-bottom: 1px solid #f2f4f7;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.turno-hoy-card:last-child {
+  border-bottom: 0;
+}
+
+.turno-hoy-card:hover {
+  background: #f8fafc;
+  border-radius: 9px;
+}
+
+.turno-hoy-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  background: #eef4ff;
+  color: #175cd3;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.turno-hoy-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.turno-hoy-info strong {
+  display: block;
+  color: #101828;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.turno-hoy-info span {
+  display: block;
+  color: #98a2b3;
+  font-size: 10px;
+  margin-top: 4px;
+}
+
+.turno-hoy-badge {
+  padding: 6px 9px;
+  border-radius: 7px;
+  font-size: 9px;
+  font-weight: 700;
+  background: #f9f5ff;
+  color: #6941c6;
+  border: 1px solid #d9d6fe;
+  white-space: nowrap;
+}
+
+/* =====================================================
+   PRÓXIMOS TURNOS
+===================================================== */
+
+.proximos-turnos-list {
+  padding: 8px 23px 14px;
+}
+
+.proximo-turno {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-height: 68px;
+  padding: 9px 5px;
+  border-bottom: 1px solid #f2f4f7;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.proximo-turno:last-child {
+  border-bottom: 0;
+}
+
+.proximo-turno:hover {
+  background: #f8fafc;
+  border-radius: 9px;
+}
+
+.proximo-turno-fecha {
+  width: 43px;
+  min-height: 43px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #eaecf0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.proximo-turno-fecha strong {
+  color: #101828;
+  font-size: 16px;
+  line-height: 17px;
+}
+
+.proximo-turno-fecha span {
+  color: #98a2b3;
+  font-size: 8px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.proximo-turno-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.proximo-turno-info strong {
+  display: block;
+  color: #344054;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.proximo-turno-info span {
+  display: block;
+  color: #98a2b3;
+  font-size: 9px;
+  margin-top: 3px;
+}
+
+.proximo-turno-tipo {
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 9px;
+  font-weight: 700;
+  background: #eff8ff;
+  color: #175cd3;
+  border: 1px solid #b2ddff;
+  white-space: nowrap;
+}
+
+/* =====================================================
+   ANIMACIÓN SUAVE
+===================================================== */
+
+@keyframes dashboardPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(18, 183, 106, 0.35);
+  }
+
+  70% {
+    box-shadow: 0 0 0 5px rgba(18, 183, 106, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(18, 183, 106, 0);
+  }
 }
 
 /* =====================================================
@@ -650,6 +1014,7 @@
 
   .welcome {
     padding: 20px;
+    border-radius: 12px;
   }
 
   .welcome h3 {
@@ -662,14 +1027,39 @@
 
   .stat-card {
     padding: 13px;
+    border-radius: 10px;
   }
 
   .stat-card strong {
     font-size: 17px;
   }
 
-  .empty-section {
-    margin: 20px 15px;
+  .panel {
+    border-radius: 10px;
+  }
+
+  .shift-row,
+  .person-row {
+    min-height: 62px;
+  }
+
+  .dashboard-section {
+    border-radius: 12px;
+  }
+
+  .section-header {
+    padding: 16px 17px;
+  }
+
+  .turnos-hoy-list,
+  .proximos-turnos-list {
+    padding-left: 17px;
+    padding-right: 17px;
+  }
+
+  .turno-hoy-card,
+  .proximo-turno {
+    gap: 10px;
   }
 }
 
@@ -689,5 +1079,21 @@
 
   .shift-status {
     display: none;
+  }
+
+  .turno-hoy-badge,
+  .proximo-turno-tipo {
+    padding: 5px 7px;
+    font-size: 8px;
+  }
+
+  .turno-hoy-avatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  .proximo-turno-fecha {
+    width: 39px;
+    min-height: 39px;
   }
 }

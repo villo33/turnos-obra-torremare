@@ -13,11 +13,8 @@ function Administracion({ trabajadores = [] }) {
   const [nombreObra, setNombreObra] = useState("Torre Mare");
   const [ubicacion, setUbicacion] = useState("");
 
-  const [horaInicioDia, setHoraInicioDia] =
-    useState("06:00");
-
-  const [horaFinDia, setHoraFinDia] =
-    useState("18:00");
+  const [horaInicioDia, setHoraInicioDia] = useState("06:00");
+  const [horaFinDia, setHoraFinDia] = useState("18:00");
 
   const [horaInicioNoche, setHoraInicioNoche] =
     useState("18:00");
@@ -26,19 +23,15 @@ function Administracion({ trabajadores = [] }) {
     useState("06:00");
 
   const [guardado, setGuardado] = useState(false);
-  const [generandoPDF, setGenerandoPDF] =
-    useState(false);
+  const [generandoPDF, setGenerandoPDF] = useState(false);
 
   /* =====================================================
      TURNOS REALES
   ===================================================== */
 
   const [turnosReales, setTurnosReales] = useState([]);
-  const [cargandoTurnos, setCargandoTurnos] =
-    useState(true);
-
-  const [errorTurnos, setErrorTurnos] =
-    useState("");
+  const [cargandoTurnos, setCargandoTurnos] = useState(true);
+  const [errorTurnos, setErrorTurnos] = useState("");
 
   /* =====================================================
      PERÍODO DEL REPORTE
@@ -207,9 +200,7 @@ function Administracion({ trabajadores = [] }) {
     const anio =
       inicio.getFullYear();
 
-    if (
-      quincenaReporte === "primera"
-    ) {
+    if (quincenaReporte === "primera") {
       return `1 al 15 de ${mes} de ${anio}`;
     }
 
@@ -384,11 +375,8 @@ function Administracion({ trabajadores = [] }) {
             ),
 
           dia,
-
           noche,
-
-          total:
-            dia + noche,
+          total: dia + noche,
         };
       }
     );
@@ -468,6 +456,11 @@ function Administracion({ trabajadores = [] }) {
 
   /* =====================================================
      GENERAR PDF
+     
+     IMPORTANTE:
+     CADA TRABAJADOR SE MANEJA COMO BLOQUE COMPLETO.
+     SI NO CABE, TODO EL BLOQUE PASA A LA SIGUIENTE
+     PÁGINA.
   ===================================================== */
 
   const generarPDF = async () => {
@@ -479,7 +472,7 @@ function Administracion({ trabajadores = [] }) {
       setGenerandoPDF(true);
 
       /* ===============================================
-         ACTUALIZAR DATOS DESDE SUPABASE
+         OBTENER DATOS ACTUALIZADOS
       =============================================== */
 
       const datosActualizados =
@@ -494,8 +487,14 @@ function Administracion({ trabajadores = [] }) {
           datosActualizados || []
         );
 
-      const { inicio, fin } =
-        obtenerFechasReporte();
+      const {
+        inicio,
+        fin,
+      } = obtenerFechasReporte();
+
+      /* ===============================================
+         CREAR DOCUMENTO
+      =============================================== */
 
       const doc =
         new jsPDF({
@@ -504,6 +503,78 @@ function Administracion({ trabajadores = [] }) {
           format: "a4",
         });
 
+      const anchoPagina =
+        doc.internal.pageSize.getWidth();
+
+      const altoPagina =
+        doc.internal.pageSize.getHeight();
+
+      const margen = 14;
+
+      /* ===============================================
+         COLORES
+      =============================================== */
+
+      const azulOscuro = [
+        15,
+        23,
+        42,
+      ];
+
+      const azul = [
+        37,
+        99,
+        235,
+      ];
+
+      const azulClaro = [
+        239,
+        246,
+        255,
+      ];
+
+      const morado = [
+        124,
+        58,
+        237,
+      ];
+
+      const moradoClaro = [
+        245,
+        243,
+        255,
+      ];
+
+      const verde = [
+        22,
+        163,
+        74,
+      ];
+
+      const verdeClaro = [
+        240,
+        253,
+        244,
+      ];
+
+      const grisTexto = [
+        71,
+        85,
+        105,
+      ];
+
+      const grisClaro = [
+        248,
+        250,
+        252,
+      ];
+
+      const grisBorde = [
+        226,
+        232,
+        240,
+      ];
+
       /* ===============================================
          LOGO
       =============================================== */
@@ -511,167 +582,471 @@ function Administracion({ trabajadores = [] }) {
       const logo =
         await cargarLogo();
 
-      if (logo) {
-        try {
-          doc.addImage(
-            logo,
-            "PNG",
-            14,
-            12,
-            24,
-            24
-          );
-        } catch (error) {
-          console.warn(
-            "No se pudo insertar el logo:",
-            error
-          );
-        }
-      }
-
       /* ===============================================
          ENCABEZADO
       =============================================== */
 
-      const posicionTitulo =
-        logo ? 44 : 14;
-
-      doc.setFont(
-        "helvetica",
-        "bold"
-      );
-
-      doc.setFontSize(18);
-
-      doc.text(
-        nombreObra ||
-          "Torre Mare",
-        posicionTitulo,
-        20
-      );
-
-      doc.setFontSize(10);
-
-      doc.setFont(
-        "helvetica",
-        "normal"
-      );
-
-      doc.text(
-        "CONTROL DE TURNOS",
-        posicionTitulo,
-        27
-      );
-
-      if (ubicacion) {
-        doc.text(
-          ubicacion,
-          posicionTitulo,
-          33
+      const dibujarEncabezado = (
+        pagina,
+        informacion = false
+      ) => {
+        doc.setFillColor(
+          ...azulOscuro
         );
-      }
+
+        doc.rect(
+          0,
+          0,
+          anchoPagina,
+          4,
+          "F"
+        );
+
+        if (logo) {
+          try {
+            doc.addImage(
+              logo,
+              "PNG",
+              margen,
+              11,
+              22,
+              22
+            );
+          } catch (error) {
+            console.warn(
+              "No se pudo insertar el logo:",
+              error
+            );
+          }
+        }
+
+        const xTitulo =
+          logo
+            ? margen + 28
+            : margen;
+
+        doc.setFont(
+          "helvetica",
+          "bold"
+        );
+
+        doc.setFontSize(17);
+
+        doc.setTextColor(
+          ...azulOscuro
+        );
+
+        doc.text(
+          nombreObra ||
+            "Torre Mare",
+          xTitulo,
+          18
+        );
+
+        doc.setFont(
+          "helvetica",
+          "normal"
+        );
+
+        doc.setFontSize(9);
+
+        doc.setTextColor(
+          ...grisTexto
+        );
+
+        doc.text(
+          ubicacion ||
+            "Control de personal y turnos",
+          xTitulo,
+          24
+        );
+
+        doc.setFont(
+          "helvetica",
+          "bold"
+        );
+
+        doc.setFontSize(9);
+
+        doc.setTextColor(
+          ...azul
+        );
+
+        doc.text(
+          "REPORTE DE TURNOS",
+          xTitulo,
+          30
+        );
+
+        doc.setFont(
+          "helvetica",
+          "normal"
+        );
+
+        doc.setFontSize(8);
+
+        doc.setTextColor(
+          ...grisTexto
+        );
+
+        doc.text(
+          `Página ${pagina}`,
+          anchoPagina - margen,
+          18,
+          {
+            align: "right",
+          }
+        );
+
+        doc.setDrawColor(
+          ...grisBorde
+        );
+
+        doc.setLineWidth(0.4);
+
+        doc.line(
+          margen,
+          37,
+          anchoPagina - margen,
+          37
+        );
+
+        if (informacion) {
+          doc.setFillColor(
+            ...grisClaro
+          );
+
+          doc.roundedRect(
+            margen,
+            43,
+            anchoPagina -
+              margen * 2,
+            22,
+            3,
+            3,
+            "F"
+          );
+
+          doc.setFont(
+            "helvetica",
+            "bold"
+          );
+
+          doc.setFontSize(8);
+
+          doc.setTextColor(
+            ...grisTexto
+          );
+
+          doc.text(
+            "PERÍODO",
+            margen + 7,
+            51
+          );
+
+          doc.setFontSize(11);
+
+          doc.setTextColor(
+            ...azulOscuro
+          );
+
+          doc.text(
+            obtenerTextoPeriodo(),
+            margen + 7,
+            58
+          );
+
+          doc.setFont(
+            "helvetica",
+            "normal"
+          );
+
+          doc.setFontSize(8);
+
+          doc.setTextColor(
+            ...grisTexto
+          );
+
+          doc.text(
+            "Reporte de asistencia y turnos",
+            anchoPagina -
+              margen -
+              7,
+            51,
+            {
+              align: "right",
+            }
+          );
+
+          doc.text(
+            `Generado: ${new Date().toLocaleDateString(
+              "es-CO"
+            )}`,
+            anchoPagina -
+              margen -
+              7,
+            58,
+            {
+              align: "right",
+            }
+          );
+        }
+      };
 
       /* ===============================================
-         INFORMACIÓN
+         PRIMERA PÁGINA
       =============================================== */
+
+      dibujarEncabezado(
+        1,
+        true
+      );
+
+      /* ===============================================
+         TOTALES GENERALES
+      =============================================== */
+
+      let totalDiaGeneral = 0;
+      let totalNocheGeneral = 0;
+
+      const filasResumen =
+        trabajadores.map(
+          (trabajador) => {
+            const turnosTrabajador =
+              turnosPeriodo.filter(
+                (turno) =>
+                  String(
+                    turno.trabajador_id
+                  ) ===
+                  String(
+                    trabajador.id
+                  )
+              );
+
+            const dia =
+              turnosTrabajador.filter(
+                (turno) =>
+                  turno.tipo === "dia"
+              ).length;
+
+            const noche =
+              turnosTrabajador.filter(
+                (turno) =>
+                  turno.tipo === "noche"
+              ).length;
+
+            totalDiaGeneral += dia;
+            totalNocheGeneral += noche;
+
+            return [
+              obtenerNombreTrabajador(
+                trabajador
+              ),
+              String(dia),
+              String(noche),
+              String(dia + noche),
+            ];
+          }
+        );
+
+      const totalGeneral =
+        totalDiaGeneral +
+        totalNocheGeneral;
+
+      /* ===============================================
+         TARJETAS GENERALES
+      =============================================== */
+
+      const tarjetasY = 71;
+      const separacion = 4;
+
+      const anchoTarjeta =
+        (anchoPagina -
+          margen * 2 -
+          separacion * 2) /
+        3;
+
+      /* DÍA */
+
+      doc.setFillColor(
+        ...azulClaro
+      );
+
+      doc.roundedRect(
+        margen,
+        tarjetasY,
+        anchoTarjeta,
+        22,
+        3,
+        3,
+        "F"
+      );
 
       doc.setFont(
         "helvetica",
         "bold"
       );
 
-      doc.setFontSize(12);
+      doc.setFontSize(8);
 
-      doc.text(
-        "Reporte de turnos",
-        14,
-        48
-      );
-
-      doc.setFont(
-        "helvetica",
-        "normal"
-      );
-
-      doc.setFontSize(10);
-
-      doc.text(
-        `Período: ${obtenerTextoPeriodo()}`,
-        14,
-        55
+      doc.setTextColor(
+        ...azul
       );
 
       doc.text(
-        `Generado: ${new Date().toLocaleDateString(
-          "es-CO"
-        )}`,
-        14,
-        61
+        "TURNOS DE DÍA",
+        margen + 6,
+        tarjetasY + 8
+      );
+
+      doc.setFontSize(16);
+
+      doc.setTextColor(
+        ...azulOscuro
+      );
+
+      doc.text(
+        String(totalDiaGeneral),
+        margen + 6,
+        tarjetasY + 18
+      );
+
+      /* NOCHE */
+
+      const nocheX =
+        margen +
+        anchoTarjeta +
+        separacion;
+
+      doc.setFillColor(
+        ...moradoClaro
+      );
+
+      doc.roundedRect(
+        nocheX,
+        tarjetasY,
+        anchoTarjeta,
+        22,
+        3,
+        3,
+        "F"
+      );
+
+      doc.setFontSize(8);
+
+      doc.setTextColor(
+        ...morado
+      );
+
+      doc.text(
+        "TURNOS DE NOCHE",
+        nocheX + 6,
+        tarjetasY + 8
+      );
+
+      doc.setFontSize(16);
+
+      doc.setTextColor(
+        ...azulOscuro
+      );
+
+      doc.text(
+        String(totalNocheGeneral),
+        nocheX + 6,
+        tarjetasY + 18
+      );
+
+      /* TOTAL */
+
+      const totalX =
+        margen +
+        (anchoTarjeta +
+          separacion) *
+          2;
+
+      doc.setFillColor(
+        ...verdeClaro
+      );
+
+      doc.roundedRect(
+        totalX,
+        tarjetasY,
+        anchoTarjeta,
+        22,
+        3,
+        3,
+        "F"
+      );
+
+      doc.setFontSize(8);
+
+      doc.setTextColor(
+        ...verde
+      );
+
+      doc.text(
+        "TOTAL TURNOS",
+        totalX + 6,
+        tarjetasY + 8
+      );
+
+      doc.setFontSize(16);
+
+      doc.setTextColor(
+        ...azulOscuro
+      );
+
+      doc.text(
+        String(totalGeneral),
+        totalX + 6,
+        tarjetasY + 18
       );
 
       /* ===============================================
          RESUMEN GENERAL
       =============================================== */
 
-      const filasResumen = [];
-
-      let totalDiaGeneral = 0;
-      let totalNocheGeneral = 0;
-
-      trabajadores.forEach(
-        (trabajador) => {
-          const turnosTrabajador =
-            turnosPeriodo.filter(
-              (turno) =>
-                String(
-                  turno.trabajador_id
-                ) ===
-                String(
-                  trabajador.id
-                )
-            );
-
-          const dia =
-            turnosTrabajador.filter(
-              (turno) =>
-                turno.tipo === "dia"
-            ).length;
-
-          const noche =
-            turnosTrabajador.filter(
-              (turno) =>
-                turno.tipo === "noche"
-            ).length;
-
-          totalDiaGeneral += dia;
-          totalNocheGeneral += noche;
-
-          filasResumen.push([
-            obtenerNombreTrabajador(
-              trabajador
-            ),
-            String(dia),
-            String(noche),
-            String(dia + noche),
-          ]);
-        }
-      );
-
       doc.setFont(
         "helvetica",
         "bold"
       );
 
-      doc.setFontSize(12);
+      doc.setFontSize(11);
+
+      doc.setTextColor(
+        ...azulOscuro
+      );
 
       doc.text(
         "Resumen por trabajador",
-        14,
-        70
+        margen,
+        105
+      );
+
+      doc.setFont(
+        "helvetica",
+        "normal"
+      );
+
+      doc.setFontSize(8);
+
+      doc.setTextColor(
+        ...grisTexto
+      );
+
+      doc.text(
+        "Cantidad de jornadas registradas durante el período.",
+        margen,
+        111
       );
 
       autoTable(doc, {
-        startY: 75,
+        startY: 116,
+
+        margin: {
+          left: margen,
+          right: margen,
+        },
 
         head: [
           [
@@ -682,66 +1057,96 @@ function Administracion({ trabajadores = [] }) {
           ],
         ],
 
-        body:
-          filasResumen,
+        body: filasResumen,
 
         foot: [
           [
             "TOTAL GENERAL",
-            String(
-              totalDiaGeneral
-            ),
-            String(
-              totalNocheGeneral
-            ),
-            String(
-              totalDiaGeneral +
-                totalNocheGeneral
-            ),
+            String(totalDiaGeneral),
+            String(totalNocheGeneral),
+            String(totalGeneral),
           ],
         ],
 
         theme: "grid",
 
         styles: {
-          fontSize: 9,
+          font: "helvetica",
+          fontSize: 8,
           cellPadding: 3,
+          textColor: azulOscuro,
+          lineColor: grisBorde,
+          lineWidth: 0.2,
+          valign: "middle",
         },
 
         headStyles: {
+          fillColor: azulOscuro,
+          textColor: [
+            255,
+            255,
+            255,
+          ],
           fontStyle: "bold",
+          halign: "center",
         },
 
         footStyles: {
+          fillColor: azulClaro,
+          textColor: azulOscuro,
           fontStyle: "bold",
+          halign: "center",
         },
 
         columnStyles: {
           0: {
-            cellWidth: 90,
+            halign: "left",
           },
 
           1: {
             halign: "center",
+            cellWidth: 24,
           },
 
           2: {
             halign: "center",
+            cellWidth: 28,
           },
 
           3: {
             halign: "center",
+            cellWidth: 26,
           },
+        },
+
+        alternateRowStyles: {
+          fillColor: [
+            252,
+            252,
+            253,
+          ],
         },
       });
 
       /* ===============================================
-         DETALLE POR TRABAJADOR
+         DETALLE
       =============================================== */
 
       let posicionY =
-        doc.lastAutoTable.finalY +
-        14;
+        doc.lastAutoTable.finalY + 13;
+
+      if (
+        posicionY >
+        altoPagina - 55
+      ) {
+        doc.addPage();
+
+        dibujarEncabezado(
+          doc.getNumberOfPages()
+        );
+
+        posicionY = 49;
+      }
 
       doc.setFont(
         "helvetica",
@@ -750,117 +1155,373 @@ function Administracion({ trabajadores = [] }) {
 
       doc.setFontSize(12);
 
+      doc.setTextColor(
+        ...azulOscuro
+      );
+
       doc.text(
-        "Días trabajados por trabajador",
-        14,
+        "Detalle por trabajador",
+        margen,
         posicionY
       );
 
-      posicionY += 7;
+      posicionY += 6;
 
-      /* ===============================================
-         CADA TRABAJADOR
-      =============================================== */
+      doc.setFont(
+        "helvetica",
+        "normal"
+      );
 
-      trabajadores.forEach(
-        (trabajador) => {
-          const turnosTrabajador =
-            turnosPeriodo
-              .filter(
-                (turno) =>
-                  String(
-                    turno.trabajador_id
-                  ) ===
-                  String(
-                    trabajador.id
-                  )
-              )
-              .sort((a, b) =>
+      doc.setFontSize(8);
+
+      doc.setTextColor(
+        ...grisTexto
+      );
+
+      doc.text(
+        "Registro de las fechas exactas y turnos realizados.",
+        margen,
+        posicionY
+      );
+
+      posicionY += 8;
+
+      /* =================================================
+         FUNCIÓN PARA CREAR UNA NUEVA PÁGINA
+      ================================================= */
+
+      const nuevaPagina = () => {
+        doc.addPage();
+
+        dibujarEncabezado(
+          doc.getNumberOfPages()
+        );
+
+        return 49;
+      };
+
+      /* =================================================
+         TRABAJADORES
+         
+         IMPORTANTE:
+         NO SE DIBUJA NADA DEL TRABAJADOR HASTA
+         COMPROBAR QUE TODO SU BLOQUE CABE.
+      ================================================= */
+
+      for (
+        let indice = 0;
+        indice < trabajadores.length;
+        indice++
+      ) {
+        const trabajador =
+          trabajadores[indice];
+
+        /* ---------------------------------------------
+           BUSCAR TURNOS
+        --------------------------------------------- */
+
+        const turnosTrabajador =
+          turnosPeriodo
+            .filter(
+              (turno) =>
                 String(
-                  a.fecha
-                ).localeCompare(
-                  String(b.fecha)
+                  turno.trabajador_id
+                ) ===
+                String(
+                  trabajador.id
                 )
-              );
-
-          /*
-            Si no caben los datos en la página,
-            creamos una nueva.
-          */
-
-          if (
-            posicionY >
-            doc.internal.pageSize.getHeight() -
-              55
-          ) {
-            doc.addPage();
-
-            posicionY = 20;
-          }
-
-          /* =============================================
-             NOMBRE
-          ============================================= */
-
-          doc.setFont(
-            "helvetica",
-            "bold"
-          );
-
-          doc.setFontSize(10);
-
-          doc.text(
-            obtenerNombreTrabajador(
-              trabajador
-            ),
-            14,
-            posicionY
-          );
-
-          posicionY += 5;
-
-          /* =============================================
-             SIN TURNOS
-          ============================================= */
-
-          if (
-            turnosTrabajador.length ===
-            0
-          ) {
-            doc.setFont(
-              "helvetica",
-              "normal"
+            )
+            .sort((a, b) =>
+              String(a.fecha).localeCompare(
+                String(b.fecha)
+              )
             );
 
-            doc.setFontSize(8);
+        /* ---------------------------------------------
+           CONTADORES
+        --------------------------------------------- */
 
-            doc.text(
-              "No tiene turnos registrados en este período.",
-              18,
-              posicionY
-            );
+        const cantidadDia =
+          turnosTrabajador.filter(
+            (turno) =>
+              turno.tipo === "dia"
+          ).length;
 
-            posicionY += 9;
+        const cantidadNoche =
+          turnosTrabajador.filter(
+            (turno) =>
+              turno.tipo === "noche"
+          ).length;
 
-            return;
+        const cantidadTotal =
+          turnosTrabajador.length;
+
+        /* ---------------------------------------------
+           ALTURA REAL APROXIMADA DEL BLOQUE
+           
+           15  -> encabezado
+           17  -> espacio
+           13  -> tarjetas
+           17  -> espacio
+           10  -> encabezado tabla
+           6   -> cada fila
+           10  -> separación
+        --------------------------------------------- */
+
+        const alturaEncabezado = 15;
+        const alturaTarjetas = 13;
+        const alturaSeparaciones = 34;
+        const alturaCabeceraTabla = 9;
+        const alturaFila = 6;
+
+        const alturaBloque =
+          alturaEncabezado +
+          alturaTarjetas +
+          alturaSeparaciones +
+          alturaCabeceraTabla +
+          Math.max(
+            turnosTrabajador.length,
+            1
+          ) *
+            alturaFila;
+
+        /* ---------------------------------------------
+           ESPACIO RESERVADO PARA EL PIE
+        --------------------------------------------- */
+
+        const espacioPie =
+          23;
+
+        /* ---------------------------------------------
+           COMPROBAR ANTES DE DIBUJAR
+           
+           SI NO CABE TODO:
+           → NUEVA PÁGINA
+           → BLOQUE COMPLETO
+        --------------------------------------------- */
+
+        if (
+          posicionY +
+            alturaBloque +
+            espacioPie >
+          altoPagina
+        ) {
+          posicionY =
+            nuevaPagina();
+        }
+
+        /* =============================================
+           CABECERA DEL TRABAJADOR
+        ============================================= */
+
+        doc.setFillColor(
+          ...azulOscuro
+        );
+
+        doc.roundedRect(
+          margen,
+          posicionY,
+          anchoPagina -
+            margen * 2,
+          15,
+          3,
+          3,
+          "F"
+        );
+
+        /* Número */
+
+        doc.setFillColor(
+          ...azul
+        );
+
+        doc.circle(
+          margen + 8,
+          posicionY + 7.5,
+          4,
+          "F"
+        );
+
+        doc.setFont(
+          "helvetica",
+          "bold"
+        );
+
+        doc.setFontSize(7);
+
+        doc.setTextColor(
+          255,
+          255,
+          255
+        );
+
+        doc.text(
+          String(indice + 1),
+          margen + 8,
+          posicionY + 9.5,
+          {
+            align: "center",
           }
+        );
 
-          /* =============================================
-             RESUMEN DEL TRABAJADOR
-          ============================================= */
+        /* Nombre */
 
-          const cantidadDia =
-            turnosTrabajador.filter(
-              (turno) =>
-                turno.tipo === "dia"
-            ).length;
+        doc.setFontSize(10);
 
-          const cantidadNoche =
-            turnosTrabajador.filter(
-              (turno) =>
-                turno.tipo ===
-                "noche"
-            ).length;
+        doc.text(
+          obtenerNombreTrabajador(
+            trabajador
+          ),
+          margen + 16,
+          posicionY + 9
+        );
+
+        /* Total */
+
+        doc.setFontSize(8);
+
+        doc.text(
+          `${cantidadTotal} turnos`,
+          anchoPagina -
+            margen -
+            6,
+          posicionY + 9,
+          {
+            align: "right",
+          }
+        );
+
+        posicionY += 19;
+
+        /* =============================================
+           TARJETAS DEL TRABAJADOR
+        ============================================= */
+
+        const miniAncho =
+          (anchoPagina -
+            margen * 2 -
+            8) /
+          3;
+
+        /* DÍA */
+
+        doc.setFillColor(
+          ...azulClaro
+        );
+
+        doc.roundedRect(
+          margen,
+          posicionY,
+          miniAncho,
+          13,
+          2,
+          2,
+          "F"
+        );
+
+        doc.setFont(
+          "helvetica",
+          "bold"
+        );
+
+        doc.setFontSize(7);
+
+        doc.setTextColor(
+          ...azul
+        );
+
+        doc.text(
+          `DÍA  ${cantidadDia}`,
+          margen + 5,
+          posicionY + 8
+        );
+
+        /* NOCHE */
+
+        const miniNocheX =
+          margen +
+          miniAncho +
+          4;
+
+        doc.setFillColor(
+          ...moradoClaro
+        );
+
+        doc.roundedRect(
+          miniNocheX,
+          posicionY,
+          miniAncho,
+          13,
+          2,
+          2,
+          "F"
+        );
+
+        doc.setTextColor(
+          ...morado
+        );
+
+        doc.text(
+          `NOCHE  ${cantidadNoche}`,
+          miniNocheX + 5,
+          posicionY + 8
+        );
+
+        /* TOTAL */
+
+        const miniTotalX =
+          margen +
+          (miniAncho + 4) *
+            2;
+
+        doc.setFillColor(
+          ...verdeClaro
+        );
+
+        doc.roundedRect(
+          miniTotalX,
+          posicionY,
+          miniAncho,
+          13,
+          2,
+          2,
+          "F"
+        );
+
+        doc.setTextColor(
+          ...verde
+        );
+
+        doc.text(
+          `TOTAL  ${cantidadTotal}`,
+          miniTotalX + 5,
+          posicionY + 8
+        );
+
+        posicionY += 17;
+
+        /* =============================================
+           SIN TURNOS
+        ============================================= */
+
+        if (
+          turnosTrabajador.length ===
+          0
+        ) {
+          doc.setFillColor(
+            ...grisClaro
+          );
+
+          doc.roundedRect(
+            margen,
+            posicionY,
+            anchoPagina -
+              margen * 2,
+            13,
+            2,
+            2,
+            "F"
+          );
 
           doc.setFont(
             "helvetica",
@@ -869,157 +1530,253 @@ function Administracion({ trabajadores = [] }) {
 
           doc.setFontSize(8);
 
-          doc.text(
-            `Día: ${cantidadDia}   |   Noche: ${cantidadNoche}   |   Total: ${turnosTrabajador.length}`,
-            14,
-            posicionY
+          doc.setTextColor(
+            ...grisTexto
           );
 
-          posicionY += 4;
+          doc.text(
+            "No tiene turnos registrados en este período.",
+            margen + 6,
+            posicionY + 8
+          );
 
-          /* =============================================
-             TABLA DE DÍAS
-          ============================================= */
+          posicionY += 21;
 
-          const filasTrabajador =
-            turnosTrabajador.map(
-              (turno) => {
-                let tipo =
-                  String(
-                    turno.tipo ||
-                      ""
-                  );
+          continue;
+        }
 
-                if (
-                  turno.tipo ===
-                  "dia"
-                ) {
-                  tipo = "Día";
-                }
+        /* =============================================
+           TABLA DEL TRABAJADOR
+           
+           pageBreak: "avoid"
+           
+           Esto es MUY IMPORTANTE:
+           jsPDF-AutoTable intentará mantener
+           esta tabla completa junta.
+        ============================================= */
 
-                if (
-                  turno.tipo ===
-                  "noche"
-                ) {
-                  tipo =
-                    "Noche";
-                }
+        const filasTrabajador =
+          turnosTrabajador.map(
+            (turno) => {
+              const tipo =
+                String(
+                  turno.tipo || ""
+                )
+                  .toLowerCase()
+                  .trim();
 
-                return [
-                  formatearFecha(
-                    turno.fecha
-                  ),
-                  tipo,
-                ];
-              }
-            );
+              return [
+                formatearFecha(
+                  turno.fecha
+                ),
+                tipo === "noche"
+                  ? "NOCHE"
+                  : "DÍA",
+              ];
+            }
+          );
 
-          autoTable(doc, {
-            startY: posicionY,
+        autoTable(doc, {
+          startY: posicionY,
 
-            head: [
-              [
-                "Día trabajado",
-                "Turno",
-              ],
+          pageBreak: "avoid",
+
+          margin: {
+            left: margen,
+            right: margen,
+            top: 45,
+            bottom: 23,
+          },
+
+          head: [
+            [
+              "Día trabajado",
+              "Turno",
+            ],
+          ],
+
+          body: filasTrabajador,
+
+          theme: "grid",
+
+          styles: {
+            font: "helvetica",
+            fontSize: 7.8,
+            cellPadding: 2.5,
+            textColor: azulOscuro,
+            lineColor: grisBorde,
+            lineWidth: 0.2,
+            valign: "middle",
+          },
+
+          headStyles: {
+            fillColor: [
+              241,
+              245,
+              249,
             ],
 
-            body:
-              filasTrabajador,
+            textColor:
+              azulOscuro,
 
-            theme: "grid",
+            fontStyle: "bold",
 
-            styles: {
-              fontSize: 8,
-              cellPadding: 2.5,
+            halign: "center",
+
+            cellPadding: 3,
+          },
+
+          columnStyles: {
+            0: {
+              cellWidth: 120,
+              halign: "left",
             },
 
-            headStyles: {
-              fontStyle:
-                "bold",
+            1: {
+              cellWidth: 35,
+              halign: "center",
             },
+          },
 
-            columnStyles: {
-              0: {
-                cellWidth: 115,
-              },
+          alternateRowStyles: {
+            fillColor: [
+              252,
+              252,
+              253,
+            ],
+          },
 
-              1: {
-                halign:
-                  "center",
-              },
-            },
+          didParseCell: (
+            data
+          ) => {
+            if (
+              data.section ===
+                "body" &&
+              data.column.index ===
+                1
+            ) {
+              const valor =
+                String(
+                  data.cell.raw || ""
+                ).toUpperCase();
 
-            margin: {
-              left: 14,
-              right: 14,
-            },
-          });
+              if (
+                valor === "NOCHE"
+              ) {
+                data.cell.styles.fillColor =
+                  moradoClaro;
 
-          posicionY =
-            doc.lastAutoTable.finalY +
-            9;
-        }
-      );
+                data.cell.styles.textColor =
+                  morado;
+
+                data.cell.styles.fontStyle =
+                  "bold";
+              } else {
+                data.cell.styles.fillColor =
+                  azulClaro;
+
+                data.cell.styles.textColor =
+                  azul;
+
+                data.cell.styles.fontStyle =
+                  "bold";
+              }
+            }
+          },
+        });
+
+        /* ---------------------------------------------
+           IMPORTANTE:
+           AutoTable puede crear una página.
+           
+           Si eso sucede, actualizamos posicionY
+           usando la posición final de la tabla.
+        --------------------------------------------- */
+
+        posicionY =
+          doc.lastAutoTable.finalY +
+          10;
+      }
 
       /* ===============================================
-         SI NO HAY TURNOS
+         SI NO HAY TRABAJADORES
       =============================================== */
 
       if (
-        turnosPeriodo.length ===
+        trabajadores.length ===
         0
       ) {
         if (
           posicionY >
-          doc.internal.pageSize.getHeight() -
-            30
+          altoPagina - 55
         ) {
-          doc.addPage();
-          posicionY = 25;
+          posicionY =
+            nuevaPagina();
         }
+
+        doc.setFillColor(
+          ...grisClaro
+        );
+
+        doc.roundedRect(
+          margen,
+          posicionY,
+          anchoPagina -
+            margen * 2,
+          25,
+          3,
+          3,
+          "F"
+        );
 
         doc.setFont(
           "helvetica",
-          "normal"
+          "bold"
         );
 
         doc.setFontSize(10);
 
-        doc.text(
-          "No hay turnos registrados en esta quincena.",
-          14,
-          posicionY
+        doc.setTextColor(
+          ...azulOscuro
         );
+
+        doc.text(
+          "No hay trabajadores registrados",
+          anchoPagina / 2,
+          posicionY + 10,
+          {
+            align: "center",
+          }
+        );
+
+        posicionY += 30;
       }
 
       /* ===============================================
          FIRMA
       =============================================== */
 
-      const altoPagina =
-        doc.internal.pageSize.getHeight();
-
       let firmaY =
-        altoPagina - 35;
+        altoPagina - 37;
 
       if (
         posicionY >
-        firmaY - 10
+        firmaY - 8
       ) {
-        doc.addPage();
+        posicionY =
+          nuevaPagina();
 
         firmaY =
-          doc.internal.pageSize.getHeight() -
-          35;
+          altoPagina - 37;
       }
 
-      doc.setFont(
-        "helvetica",
-        "normal"
+      doc.setDrawColor(
+        ...grisTexto
       );
 
-      doc.setFontSize(9);
+      doc.setLineWidth(
+        0.4
+      );
 
       doc.line(
         65,
@@ -1028,14 +1785,49 @@ function Administracion({ trabajadores = [] }) {
         firmaY
       );
 
+      doc.setFont(
+        "helvetica",
+        "bold"
+      );
+
+      doc.setFontSize(8);
+
+      doc.setTextColor(
+        ...azulOscuro
+      );
+
       doc.text(
         "Firma del administrador",
-        88,
-        firmaY + 6
+        105,
+        firmaY + 6,
+        {
+          align: "center",
+        }
+      );
+
+      doc.setFont(
+        "helvetica",
+        "normal"
+      );
+
+      doc.setFontSize(7);
+
+      doc.setTextColor(
+        ...grisTexto
+      );
+
+      doc.text(
+        nombreObra ||
+          "Torre Mare",
+        105,
+        firmaY + 11,
+        {
+          align: "center",
+        }
       );
 
       /* ===============================================
-         PIE DE PÁGINA
+         PIE DE TODAS LAS PÁGINAS
       =============================================== */
 
       const totalPaginas =
@@ -1043,11 +1835,12 @@ function Administracion({ trabajadores = [] }) {
 
       for (
         let pagina = 1;
-        pagina <=
-        totalPaginas;
+        pagina <= totalPaginas;
         pagina++
       ) {
-        doc.setPage(pagina);
+        doc.setPage(
+          pagina
+        );
 
         const alto =
           doc.internal.pageSize.getHeight();
@@ -1055,26 +1848,42 @@ function Administracion({ trabajadores = [] }) {
         const ancho =
           doc.internal.pageSize.getWidth();
 
+        doc.setDrawColor(
+          ...grisBorde
+        );
+
+        doc.setLineWidth(
+          0.3
+        );
+
+        doc.line(
+          margen,
+          alto - 15,
+          ancho - margen,
+          alto - 15
+        );
+
         doc.setFont(
           "helvetica",
           "normal"
         );
 
-        doc.setFontSize(8);
+        doc.setFontSize(7);
+
+        doc.setTextColor(
+          ...grisTexto
+        );
 
         doc.text(
-          `${
-            nombreObra ||
-            "Torre Mare"
-          } — Control de obra`,
-          14,
-          alto - 10
+          `${nombreObra || "Torre Mare"} · Control de turnos`,
+          margen,
+          alto - 9
         );
 
         doc.text(
           `Página ${pagina} de ${totalPaginas}`,
-          ancho - 14,
-          alto - 10,
+          ancho - margen,
+          alto - 9,
           {
             align: "right",
           }
@@ -1082,7 +1891,7 @@ function Administracion({ trabajadores = [] }) {
       }
 
       /* ===============================================
-         DESCARGAR
+         GUARDAR PDF
       =============================================== */
 
       const nombreArchivo =
@@ -1095,6 +1904,7 @@ function Administracion({ trabajadores = [] }) {
       doc.save(
         nombreArchivo
       );
+
     } catch (error) {
       console.error(
         "Error generando PDF:",
@@ -1150,7 +1960,6 @@ function Administracion({ trabajadores = [] }) {
 
       </div>
 
-
       <div className="administracion-grid">
 
         {/* =================================================
@@ -1179,7 +1988,6 @@ function Administracion({ trabajadores = [] }) {
 
           </div>
 
-
           <form
             className="admin-form"
             onSubmit={
@@ -1195,9 +2003,7 @@ function Administracion({ trabajadores = [] }) {
 
               <input
                 type="text"
-                value={
-                  nombreObra
-                }
+                value={nombreObra}
                 onChange={(e) =>
                   setNombreObra(
                     e.target.value
@@ -1208,7 +2014,6 @@ function Administracion({ trabajadores = [] }) {
 
             </div>
 
-
             <div className="form-group">
 
               <label>
@@ -1217,9 +2022,7 @@ function Administracion({ trabajadores = [] }) {
 
               <input
                 type="text"
-                value={
-                  ubicacion
-                }
+                value={ubicacion}
                 onChange={(e) =>
                   setUbicacion(
                     e.target.value
@@ -1230,11 +2033,9 @@ function Administracion({ trabajadores = [] }) {
 
             </div>
 
-
             <div className="form-section-title">
               Horarios de trabajo
             </div>
-
 
             <div className="horarios-grid">
 
@@ -1251,7 +2052,6 @@ function Administracion({ trabajadores = [] }) {
                   </strong>
 
                 </div>
-
 
                 <div className="horario-inputs">
 
@@ -1274,7 +2074,6 @@ function Administracion({ trabajadores = [] }) {
                     />
 
                   </div>
-
 
                   <div>
 
@@ -1300,7 +2099,6 @@ function Administracion({ trabajadores = [] }) {
 
               </div>
 
-
               <div className="horario-card noche">
 
                 <div className="horario-title">
@@ -1314,7 +2112,6 @@ function Administracion({ trabajadores = [] }) {
                   </strong>
 
                 </div>
-
 
                 <div className="horario-inputs">
 
@@ -1337,7 +2134,6 @@ function Administracion({ trabajadores = [] }) {
                     />
 
                   </div>
-
 
                   <div>
 
@@ -1365,7 +2161,6 @@ function Administracion({ trabajadores = [] }) {
 
             </div>
 
-
             <div className="admin-form-footer">
 
               {guardado && (
@@ -1386,7 +2181,6 @@ function Administracion({ trabajadores = [] }) {
           </form>
 
         </section>
-
 
         {/* =================================================
             REPORTES
@@ -1414,7 +2208,6 @@ function Administracion({ trabajadores = [] }) {
 
           </div>
 
-
           <div
             style={{
               padding:
@@ -1439,11 +2232,6 @@ function Administracion({ trabajadores = [] }) {
               días exactos trabajados por cada
               persona.
             </p>
-
-
-            {/* =================================================
-                MES
-            ================================================= */}
 
             <div
               style={{
@@ -1496,11 +2284,6 @@ function Administracion({ trabajadores = [] }) {
               />
 
             </div>
-
-
-            {/* =================================================
-                QUINCENA
-            ================================================= */}
 
             <div
               style={{
@@ -1565,11 +2348,6 @@ function Administracion({ trabajadores = [] }) {
 
             </div>
 
-
-            {/* =================================================
-                PERÍODO
-            ================================================= */}
-
             <div
               style={{
                 marginBottom:
@@ -1617,11 +2395,6 @@ function Administracion({ trabajadores = [] }) {
 
             </div>
 
-
-            {/* =================================================
-                ESTADO
-            ================================================= */}
-
             {cargandoTurnos && (
               <div
                 style={{
@@ -1643,7 +2416,6 @@ function Administracion({ trabajadores = [] }) {
               </div>
             )}
 
-
             {errorTurnos && (
               <div
                 style={{
@@ -1664,11 +2436,6 @@ function Administracion({ trabajadores = [] }) {
                 {errorTurnos}
               </div>
             )}
-
-
-            {/* =================================================
-                RESUMEN EN PANTALLA
-            ================================================= */}
 
             <div
               style={{
@@ -1720,7 +2487,6 @@ function Administracion({ trabajadores = [] }) {
 
               </div>
 
-
               <div
                 style={{
                   padding:
@@ -1758,7 +2524,6 @@ function Administracion({ trabajadores = [] }) {
 
               </div>
 
-
               <div
                 style={{
                   padding:
@@ -1769,7 +2534,7 @@ function Administracion({ trabajadores = [] }) {
                     "#f9fafb",
                   textAlign:
                     "center",
-                    border:
+                  border:
                     "1px solid #eaecf0",
                 }}
               >
@@ -1779,7 +2544,7 @@ function Administracion({ trabajadores = [] }) {
                     fontSize:
                       "11px",
                     color:
-                      "#667085",
+                    "#667085",
                   }}
                 >
                   TOTAL
@@ -1798,11 +2563,6 @@ function Administracion({ trabajadores = [] }) {
 
             </div>
 
-
-            {/* =================================================
-                INFORMACIÓN
-            ================================================= */}
-
             <div
               style={{
                 marginBottom:
@@ -1813,7 +2573,6 @@ function Administracion({ trabajadores = [] }) {
                   "#667085",
               }}
             >
-
               <strong>
                 {trabajadores.length}
               </strong>{" "}
@@ -1823,13 +2582,7 @@ function Administracion({ trabajadores = [] }) {
                 {turnosPeriodo.length}
               </strong>{" "}
               turnos en este período.
-
             </div>
-
-
-            {/* =================================================
-                BOTÓN PDF
-            ================================================= */}
 
             <button
               type="button"
@@ -1867,19 +2620,12 @@ function Administracion({ trabajadores = [] }) {
                     : "pointer",
               }}
             >
-
               {generandoPDF
                 ? "Generando PDF..."
                 : cargandoTurnos
                   ? "Cargando turnos..."
                   : "📄 Generar PDF de turnos"}
-
             </button>
-
-
-            {/* =================================================
-                ACTUALIZAR
-            ================================================= */}
 
             <button
               type="button"
