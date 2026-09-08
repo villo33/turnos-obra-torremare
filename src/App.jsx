@@ -2540,42 +2540,41 @@ function App() {
                                   </p>
 
 
-                                  {notificacion.fecha_turno && (
+                                  
 
-                                    <span
-                                      style={{
-                                        display:
-                                          "inline-block",
+                                  
+                                      
+                                        
+                                    
 
-                                        padding:
-                                          "4px 8px",
+                                        
+                                        
 
-                                        borderRadius:
-                                          "6px",
+                                        
+                                        
 
-                                        background:
-                                          "#f2f4f7",
+                                        
+                                          
 
-                                        fontSize:
-                                          "11px",
+                                        
+                                        
 
-                                        fontWeight:
-                                          "600",
+                                        
+                                        
 
-                                        color:
-                                          "#344054",
-                                      }}
-                                    >
+                                        
+                                
+                                    
+                                    
 
-                                      📅{" "}
+                                      
+                                      
+                                        
+                              
 
-                                      {
-                                        notificacion.fecha_turno
-                                      }
+                                    
 
-                                    </span>
-
-                                  )}
+                                  
 
 
                                   {/* =================================
