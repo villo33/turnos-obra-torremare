@@ -1457,7 +1457,7 @@ function App() {
 
 
       const mensajeAdmin =
-        `${nombreTrabajador} confirmó su turno del ${fechaConfirmacion}.`;
+        `${nombreTrabajador} confirmó su turno.`;
 
 
       console.log(

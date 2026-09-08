@@ -483,7 +483,7 @@ function CalendarioPage({
                     "🔔 Torre Mare",
 
                   message:
-                    "Tienes nuevos cambios en tus turnos. Revisa el calendario.",
+                    "nuevo horario disponible. Revisa el calendario.",
 
                   url:
                     "/",
